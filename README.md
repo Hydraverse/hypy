@@ -9,7 +9,7 @@ Primarily, `hypy` (pronounced "hippie") currently provides:
 
 # Quick Start
 
-If you know what this is and just want to get going, just install:
+If you know what this is and just want to get going, install:
 
 `$ pip install git+https://github.com/hydraverse/hypy`
 
@@ -60,8 +60,8 @@ version needs and dependencies.
 
 If installing at the system level, jump down to the [Install Prerequisites](#Install-Prerequisites) section.
 
-Otherwise, you can choose between `virtualenv`, `Anaconda`, `pipenv` and many others;
-however, `virtualenv` is considered to be the supported environment for this library.
+Otherwise, you can choose between `venv`, `Anaconda`, `pipenv` and many others;
+however, `venv` is considered to be the supported environment for this library.
 
 #### Virtualenv
 
@@ -69,10 +69,14 @@ In case you'd like to use/install `hypy` within a virtual environment, run
 the following within the library's top folder:
 
 ```text
-λ virtualenv -p python3.7 .env
+λ mkdir .env
+λ python3 -m venv .env/hypy
 ...
-
-λ source .env/bin/activate
+λ source .env/hypy/bin/activate
+(hypy) λ which python
+/home/halo/.env/hypy/bin/python
+(hypy) λ pip install --upgrade pip  # Ensure that pip is the newest version.
+...
 ```
 <!-- TODO: Add example output from `which python` etc -->
 
