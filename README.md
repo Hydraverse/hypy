@@ -34,7 +34,7 @@ Starting with v0.1-final, a pip-installable `.whl` will be available as a releas
 ### Clone/Download Sources:
 
 ```text
-λ git clone https://github.com/hydraverse/hypy
+λ git clone https://github.com/hydraverse/hypyhttps://explorer.hydrachain.org/misc/biggest-miners
 
 Cloning into 'hypy'...
 ...
@@ -80,7 +80,7 @@ the following within the library's top folder:
 ```
 <!-- TODO: Add example output from `which python` etc -->
 
-Requires the Debian/Ubuntu packages `python3-distutils` and `python3-virtualenv`.
+Requires the Debian/Ubuntu packages `python3-distutils` and `python3-venv`.
 
 #### Anaconda
 
