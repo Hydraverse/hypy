@@ -1,4 +1,4 @@
-# Hydra Chain Integration & Tools Library [PREVIEW]
+# Hydra Chain Integration & Tools Library  [PREVIEW]
 
 This is a Python support library for the Hydra Chain project (https://hydrachain.org) aimed at simplifying the process of using and developing apps for the blockchain.
 
