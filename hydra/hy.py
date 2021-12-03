@@ -71,7 +71,6 @@ class Hydra:
     @staticmethod
     def parser():
         parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description=__doc__)
-        parser.add_argument('-V', '--version', action='version', version='%(prog)s 1.0')
 
         app = Hydra.global_app()
 
@@ -83,6 +82,8 @@ class Hydra:
             app.cls.parser(app_pg)
 
         else:
+            parser.add_argument('-V', '--version', action='version', version='%(prog)s 1.0')
+
             subparsers = parser.add_subparsers(
                 dest="app", title="applications", help="application to run", metavar="APP"
             )
@@ -103,12 +104,10 @@ class Hydra:
     @staticmethod
     def __parser_base(app, parser):
 
-        parser_main = parser.add_argument_group(title="primary arguments")
-
         if app.version:
-            parser_main.add_argument('-V', f'--version-{app.name}', action='version', version=f'hy-{app.name} {app.version}')
+            parser.add_argument(f'-V', f'--version', action='version', version=f'hy-{app.name} {app.version}')
 
-        log.log_parser(parser_main)
+        log.log_parser(parser)
 
     @staticmethod
     def slice_type(slce):
