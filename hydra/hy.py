@@ -71,19 +71,18 @@ class Hydra:
     @staticmethod
     def parser():
         parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description=__doc__)
+        parser.add_argument('-V', '--version', action='version', version='%(prog)s 1.0')
 
         app = Hydra.global_app()
 
         if app:
-            Hydra.__parser_base(parser)
+            Hydra.__parser_base(app, parser)
 
             app_pg = parser.add_argument_group(title=app.name, description=app.desc)
 
             app.cls.parser(app_pg)
 
         else:
-            parser.add_argument('-V', '--version', action='version', version='%(prog)s 1.0')
-
             subparsers = parser.add_subparsers(
                 dest="app", title="applications", help="application to run", metavar="APP"
             )
@@ -93,7 +92,7 @@ class Hydra:
             for app in HydraApp.all():
                 app_p = subparsers.add_parser(app.name, aliases=app.aliases, help=app.desc)
 
-                Hydra.__parser_base(app_p)
+                Hydra.__parser_base(app, app_p)
 
                 app_pg = app_p.add_argument_group(title=app.name, description=app.desc)
 
@@ -102,11 +101,12 @@ class Hydra:
         return parser
 
     @staticmethod
-    def __parser_base(parser):
+    def __parser_base(app, parser):
 
         parser_main = parser.add_argument_group(title="primary arguments")
 
-        # parser.add_argument('--version', action='version', version='%(prog)s 2.0')
+        if app.version:
+            parser_main.add_argument('-V', f'--version-{app.name}', action='version', version=f'hy-{app.name} {app.version}')
 
         log.log_parser(parser_main)
 

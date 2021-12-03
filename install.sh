@@ -5,4 +5,6 @@ d=$(dirname "$(readlink -f '$0')")
 
 cd "$d";
 
+# TODO: requirements.txt, argcomplete
+
 pip install .;

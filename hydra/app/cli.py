@@ -4,12 +4,12 @@ import argparse
 from hydra.app import HydraApp
 
 
-@HydraApp.register(name="cli", desc="command-line interface")
+@HydraApp.register(name="cli", desc="command-line interface", version="1.0")
 class HydraCLIApp(HydraApp):
 
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
-        parser.add_argument('-V', '--version', action='version', version='%(prog)s 1.0')
+        pass
 
     def run(self):
         self.log.info("running!")

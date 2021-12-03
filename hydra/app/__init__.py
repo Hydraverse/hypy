@@ -3,10 +3,10 @@
 import sys
 import argparse
 import importlib
-from collections import namedtuple
 
 from hydra import log
-from hydra.util.adict import oadict
+from hydra.util.struct import dictuple, namedtuple
+
 
 APPS = "cli", "rpc", "test"
 
@@ -16,7 +16,7 @@ __all__ = "HydraApp", "APPS"
 __INFO__ = {}
 
 
-MethodInfo = namedtuple("Info", ("name", "desc", "cls", "aliases"))
+MethodInfo = namedtuple("Info", ("name", "desc", "cls", "aliases", "version"))
 
 
 class HydraApp:
@@ -29,7 +29,7 @@ class HydraApp:
     # noinspection PyProtectedMember
     def __init__(self, *, hy=None, **kwds):
         self.hy = hy
-        self.args = oadict(kwds)
+        self.args = kwds
         self.log = log
 
         if self.hy is not None:
@@ -41,6 +41,7 @@ class HydraApp:
             info = self.info
 
             parser = argparse.ArgumentParser()
+
             info.cls.parser(parser)
 
             for action in parser._actions:
@@ -54,6 +55,8 @@ class HydraApp:
             for dest in parser._defaults:
                 if not dest not in self.args:
                     self.args[dest] = parser._defaults[dest]
+
+        self.args = dictuple("args", self.args)
 
         super().__init__()
 
@@ -102,16 +105,16 @@ class HydraApp:
         pass
 
     @staticmethod
-    def __new_entry(cls, name, desc="", aliases=None):
-        cls.info = MethodInfo(name=name, desc=desc, cls=cls, aliases=aliases or [])
+    def __new_entry(cls, name, desc="", aliases=None, version=None):
+        cls.info = MethodInfo(name=name, desc=desc, cls=cls, aliases=aliases or [], version=version)
         cls.main = staticmethod(lambda: HydraApp.main(cls.info.name))
         __INFO__[name] = cls.info
         return cls
 
     @staticmethod
-    def register(*, name, desc="", aliases=None):  # TODO: support aliases (????)
+    def register(*, name, desc="", aliases=None, version=None):  # TODO: support the aliases (????)
         def hook(cls):
-            return HydraApp.__new_entry(cls, name, desc, aliases)
+            return HydraApp.__new_entry(cls, name, desc, aliases, version)
 
         return hook
 
