@@ -13,7 +13,8 @@ _DEFAULTS = {
     str: '""',
     int: 0,
     float: 0.0,
-    list: []
+    list: [],
+    bool: False
 }
 
 
@@ -125,7 +126,7 @@ class HydraRPC:
     def __asdict__(result):
 
         if isinstance(result, (list, tuple)):
-            return map(HydraRPC.__asdict__, result)
+            return list(map(HydraRPC.__asdict__, result))
 
         if not hasattr(result, "_asdict"):
             return result
@@ -153,7 +154,7 @@ class HydraRPC:
             ",\n".join(
                 self.__string__(value, indent + 1, indent_amt)
                 if hasattr(value, "_asdict")
-                else ((indent + 1) * indent_amt) * " " + f"""{name}: {value or _DEFAULTS.get(type(value), str)}"""
+                else ((indent + 1) * indent_amt) * " " + f"""{name}: {value or _DEFAULTS.get(type(value), _DEFAULTS[str])}"""
                 for (name, value) in (result._asdict() if hasattr(result, "_asdict") else (result if isinstance(result, dict) else {"result": result})).items()
             ) + \
             f"\n{(indent * indent_amt) * ' '}}}"

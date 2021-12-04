@@ -89,7 +89,8 @@ class TxVIOApp(HydraRPCApp):
 
                 vout = vin_rawtx_decoded.vout[vin.vout]
 
-                addresses_vin = addresses_vin.union(vout.scriptPubKey.addresses)
+                if hasattr(vout.scriptPubKey, "addresses"):
+                    addresses_vin = addresses_vin.union(vout.scriptPubKey.addresses)
 
                 # print(f"{type(vin).__name__}:",
                 #       str(vout.value).ljust(16, ' '),
@@ -114,6 +115,11 @@ class TxVIOAppTest(Test):
             TxVIOApp,
             "9c7767320e82f7386e5768c765f9cb87d078384e030954214cca210a0cfad076",
             "933e0993454ac7b6c6083f06ab148ffdfb85d870528b43421b6ac63d4e2ba2ba"
+        )
+
+        self.assertHydraAppIsRunnable(
+            TxVIOApp,
+            "6ecc00fa5285f8523ecf9b20ddaba1f127615a8fdd7ee68416d9aefb8731db66"
         )
 
 
