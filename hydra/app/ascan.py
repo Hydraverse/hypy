@@ -7,6 +7,7 @@ import argparse
 from hydra.app.rpc import HydraRPCApp, HydraApp
 from hydra.rpc import HydraRPC
 from hydra.test import Test
+from hydra.hy import Hydra
 from hydra import log
 
 from .txvio import TxVIOApp
@@ -21,6 +22,7 @@ class AScanApp(HydraRPCApp):
         HydraRPC.__parser__(parser, allow_json=False)
         parser.add_argument("-c", "--count", type=int, default=10, help="number of recent transactions to load")
         parser.add_argument("-s", "--skip", type=int, default=0, help="number of recent transactions to skip")
+        parser.add_argument("-R", "--recursive", action="store_true", help="scan vin addresses recursively")
         parser.add_argument("address", metavar="ADDR", type=str, help="address to scan")
 
     def run(self):
@@ -28,34 +30,10 @@ class AScanApp(HydraRPCApp):
 
         self.rpc = HydraRPC.__from_parsed__(self.args)
 
-        addrs_vin = set()
-
         try:
-            if not self.rpc.validateaddress(self.args.address).isvalid:
-                raise argparse.ArgumentError(self.args.address, "invalid address")
-
-            self.log.info("importing address...")
-            self.rpc.importaddress(address=self.args.address, label=self.args.address)
-
-            self.log.info("getting transactions...")
-            txns = self.rpc.listtransactions(
-                label=self.args.address, count=self.args.count, skip=self.args.skip,
-                include_watchonly=True
-            )
-
-            self.log.info("scanning tx vin addresses...")
-            for txn in txns:
-                self.log.debug(f"txid: {txn.txid}")
-                addr_vin, addr_vout = TxVIOApp.get_vinout_addresses(self.rpc, txn.txid, txn.blockhash)
-                self.log.debug(f"addr: {addr_vin} {addr_vout}")
-
-                if self.args.address in addr_vin:
-                    addrs_vin_union = addrs_vin.union(addr_vin)
-                    addrs_vin_diff = addrs_vin_union.difference(addrs_vin)
-                    addrs_vin = addrs_vin_union
-
-                    if len(addrs_vin_diff):
-                        print("\n".join(addrs_vin_diff))
+            for (addr_scan, addr_found) in AScanApp.ascan(self.rpc, self.args.address, self.args.count, self.args.skip,
+                                                          recursive=self.args.recursive):
+                print(f"{addr_scan}: {addr_found}")
 
         except HydraRPC.Error as err:
 
@@ -64,6 +42,46 @@ class AScanApp(HydraRPCApp):
 
             print(err)
             exit(-1)
+
+    @staticmethod
+    def ascan(rpc, address, count: int, skip: int = None, addr_found: set = None, recursive=False):
+        if addr_found is None:
+            addr_found = set()
+
+        logs = Hydra.get().app.log
+
+        if not rpc.validateaddress(address).isvalid:
+            raise ValueError(f"{address}: invalid address")
+
+        logs.info(f"{address}: importing address...")
+        rpc.importaddress(address=address, label=address)
+
+        logs.info(f"{address}: getting transactions...")
+        txns = rpc.listtransactions(
+            label=address, count=count, skip=skip,
+            include_watchonly=True
+        )
+
+        logs.info(f"{address}: scanning tx vin addresses...")
+        for txn in txns:
+            logs.debug(f"{address}: txid: {txn.txid}")
+            addr_vin, addr_vout = TxVIOApp.get_vinout_addresses(rpc, txn.txid, txn.blockhash)
+            logs.debug(f"{address}: addr: vin={addr_vin} vout={addr_vout}")
+
+            if address in addr_vin:
+                addrs_vin_union = addr_found.union(addr_vin)
+                addrs_vin_diff = addrs_vin_union.difference(addr_found)
+                addr_found.update(addrs_vin_union)
+
+                for addr in addrs_vin_diff:
+
+                    yield address, addr
+
+                    if recursive and addr != address:
+                        for (r_addr_scan, r_addr_found) in AScanApp.ascan(rpc, addr, count, skip, addr_found, recursive):
+                            yield r_addr_scan, r_addr_found
+
+
 
 
 @Test.register()
@@ -77,7 +95,7 @@ class AScanAppTest(Test):
     def test_1_ascan_run(self):
         """Test running the app.
         """
-        self.assertHydraAppIsRunnable(AScanApp, "TvuuV8G8S3dstJ6C75WJLPKboiA4qX8zNv")
+        self.assertHydraAppIsRunnable(AScanApp, "TwdkoPNUDk9n4zW7qPx4v7bMNvCiHgSXzD")
 
 
 if __name__ == "__main__":
