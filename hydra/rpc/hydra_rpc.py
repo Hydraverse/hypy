@@ -4,7 +4,7 @@ import argparse
 import pprint
 import json
 from collections import namedtuple
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from hydra.util.struct import dictuple
 
@@ -17,18 +17,8 @@ _DEFAULTS = {
 }
 
 
-def _DFL(v, t):
-    return t(v) if v is not None else _DEFAULTS.get(t, None)
-
-
 class HydraRPC:
-    host: str = "127.0.0.1"
-    port: int = 3389
-    user: str = ""
-    # noinspection HardcodedPassword
-    password: str = ""
-    # noinspection HttpUrlsUsage
-    url: str = f"http://{host}:{port}"
+    url: str = f"test://127.0.0.1"
     __session = None
     __json = False
 
@@ -46,45 +36,38 @@ class HydraRPC:
         def __repr__(self) -> str:
             return repr(self.error) if self.error is not None else repr(self.response)
 
-    def __init__(self, host: str = host, port: int = port, user: str = user, password: str = password, json=False):
-        self.host = host
-        self.port = port
-        self.user = user
-        self.password = password
-        self.__json = json
-
-        userpass = f"{user}{':'+password if len(password) else ''}@" if user else ""
-
-        # noinspection HttpUrlsUsage
-        self.url = f"http://{userpass}{host}:{port}/"
+    def __init__(self, url: str = url, json_=False):
+        self.__json = json_
+        self.url = HydraRPC.__parse_url__(url)
 
     @staticmethod
     def __parse_url__(url: str):
-        parsed = urlsplit(url)
+        url_split = urlsplit(url)
 
         schemes_main = ("http", "mainnet", "main")
         schemes = schemes_main + ("testnet", "test")
 
-        if parsed.scheme not in schemes:
+        if url_split.scheme not in schemes:
             raise ValueError(f"Invalid scheme for url: {url}")
 
-        port = parsed.port if parsed.port is not None else (
-            3389 if parsed.scheme in schemes_main else 13389
-        )
+        netloc = str(url_split.netloc)
 
-        host = parsed.hostname if parsed.hostname is not None else HydraRPC.host
+        if url_split.port is None:
+            netloc += f":{3389 if url_split.scheme in schemes_main else 13389}"
 
-        user = parsed.username if parsed.username is not None else HydraRPC.user
-
-        password = parsed.password if parsed.password is not None else HydraRPC.password
-
-        return host, port, user, password
+        return urlunsplit((
+            "http",
+            netloc,
+            url_split.path,
+            url_split.query,
+            url_split.fragment
+        ))
 
     @staticmethod
     def __parse_param__(param: str):
         try:
             return json.loads(param)
-        except json.decoder.JSONDecodeError as err:
+        except json.decoder.JSONDecodeError:
             try:
                 return json.loads(f'"{param}"')
             except json.decoder.JSONDecodeError:
@@ -100,11 +83,9 @@ class HydraRPC:
             parser.add_argument("-j", "--json", action="store_true", default=False, help="output parseable json",
                                 required=False)
 
-        # TODO: Maybe add URL spec string as another entry method
-
     @staticmethod
     def __from_parsed__(args: argparse.Namespace):
-        return HydraRPC(*HydraRPC.__parse_url__(args.rpc), getattr(args, "json", False))
+        return HydraRPC(url=HydraRPC.__parse_url__(args.rpc), json_=getattr(args, "json", False))
 
     @staticmethod
     def __make_request_dict(name: str, *args) -> dict:
@@ -129,19 +110,39 @@ class HydraRPC:
             return \
                 dictuple(name, result) if (isinstance(result, dict) and not self.__json) else (
                     result if self.__json else (
-                        [dictuple(f"{name}_{i}", item) for i, item in enumerate(result)] if isinstance(result, list)
+                        [
+                            (
+                                dictuple(f"{name}_{i}", item) if isinstance(item, dict)
+                                else item
+                            )
+                            for i, item in enumerate(result)
+                        ] if isinstance(result, list)
                         else result
                     )
                 )
 
+    @staticmethod
+    def __asdict__(result):
+
+        if isinstance(result, (list, tuple)):
+            return map(HydraRPC.__asdict__, result)
+
+        if not hasattr(result, "_asdict"):
+            return result
+
+        return dict(map(lambda kv: (kv[0], HydraRPC.__asdict__(kv[1])), result._asdict().items()))
+
     def __string__(self, result, indent=0, indent_amt=4):
         q = lambda s: f'"{s}"' if isinstance(s, str) else str(s)
+
+        if result is None:
+            return ""
 
         if isinstance(result, (str, int, float)):
             return str(result)
 
         if self.__json:
-            return pprint.pformat(result._asdict() if hasattr(result, "_asdict") else result)
+            return pprint.pformat(HydraRPC.__asdict__(result))
 
         if isinstance(result, list):
             return ",\n".join(self.__string__(item) for item in result)
@@ -152,8 +153,8 @@ class HydraRPC:
             ",\n".join(
                 self.__string__(value, indent + 1, indent_amt)
                 if hasattr(value, "_asdict")
-                else ((indent + 1) * indent_amt) * " " + f"""{name}: {q(value) or _DEFAULTS.get(type(value), str)}"""
-                for (name, value) in (result._asdict() if hasattr(result, "_asdict") else result).items()
+                else ((indent + 1) * indent_amt) * " " + f"""{name}: {value or _DEFAULTS.get(type(value), str)}"""
+                for (name, value) in (result._asdict() if hasattr(result, "_asdict") else (result if isinstance(result, dict) else {"result": result})).items()
             ) + \
             f"\n{(indent * indent_amt) * ' '}}}"
 
