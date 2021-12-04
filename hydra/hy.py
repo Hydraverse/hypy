@@ -1,5 +1,6 @@
 """HyPy Library Application Tool.
 """
+from __future__ import annotations
 import sys
 import os
 import argparse
@@ -11,6 +12,8 @@ from hydra import log
 
 class Hydra:
     args: argparse.Namespace = None
+    __main: Hydra = None
+    __app: HydraApp = None
 
     def __init__(self, args):
         self.args = args
@@ -27,10 +30,20 @@ class Hydra:
 
         log.debug(f"app {info.name} ...")
 
-        app = HydraApp.make(info, hy=self)
+        app = self.__app = HydraApp.make(info, hy=self)
 
         if app is not None:
             return app.run()
+
+    @property
+    def app(self) -> HydraApp:
+        return self.__app
+
+    @staticmethod
+    def get() -> Hydra:
+        """Get the current Hydra instance running the main app.
+        """
+        return Hydra.__main
 
     @staticmethod
     def main(name=None):
@@ -52,7 +65,7 @@ class Hydra:
 
         # noinspection PyBroadException
         try:
-            hy = Hydra(args)
+            hy = Hydra.__main = Hydra(args)
 
             hy.run()
 
