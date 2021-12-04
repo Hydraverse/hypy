@@ -1,8 +1,10 @@
+import os
 import requests
 import argparse
 import pprint
-from collections.abc import Iterable
+import json
 from collections import namedtuple
+from urllib.parse import urlsplit
 
 from hydra.util.struct import dictuple
 
@@ -25,7 +27,8 @@ class HydraRPC:
     user: str = ""
     # noinspection HardcodedPassword
     password: str = ""
-    url: str = ""
+    # noinspection HttpUrlsUsage
+    url: str = f"http://{host}:{port}"
     __session = None
     __json = False
 
@@ -56,17 +59,52 @@ class HydraRPC:
         self.url = f"http://{userpass}{host}:{port}/"
 
     @staticmethod
-    def __parser__(parser: argparse.ArgumentParser, require=False):
-        parser.add_argument("-H", "--host", default=HydraRPC.host, type=str, help="rpc host", required=require)
-        parser.add_argument("-p", "--port", default=HydraRPC.port, type=int, help="rpc port", required=False)
-        parser.add_argument("-u", "--user", default=HydraRPC.user, type=str, help="rpc user", required=False)
-        parser.add_argument("-P", "--password", default=HydraRPC.password, type=str, help="rpc password", required=False)
-        parser.add_argument("-j", "--json", action="store_true", default=False, help="output parseable json", required=False)
+    def __parse_url__(url: str):
+        parsed = urlsplit(url)
+
+        schemes_main = ("http", "mainnet", "main")
+        schemes = schemes_main + ("testnet", "test")
+
+        if parsed.scheme not in schemes:
+            raise ValueError(f"Invalid scheme for url: {url}")
+
+        port = parsed.port if parsed.port is not None else (
+            3389 if parsed.scheme in schemes_main else 13389
+        )
+
+        host = parsed.hostname if parsed.hostname is not None else HydraRPC.host
+
+        user = parsed.username if parsed.username is not None else HydraRPC.user
+
+        password = parsed.password if parsed.password is not None else HydraRPC.password
+
+        return host, port, user, password
+
+    @staticmethod
+    def __parse_param__(param: str):
+        try:
+            return json.loads(param)
+        except json.decoder.JSONDecodeError as err:
+            try:
+                return json.loads(f'"{param}"')
+            except json.decoder.JSONDecodeError:
+                raise
+
+    @staticmethod
+    def __parser__(parser: argparse.ArgumentParser, require=False, allow_json=True):
+
+        parser.add_argument("-r", "--rpc", default=os.environ.get("HY_RPC", HydraRPC.url), type=str,
+                            help="rpc url (env: HY_RPC)", required=require)
+
+        if allow_json:
+            parser.add_argument("-j", "--json", action="store_true", default=False, help="output parseable json",
+                                required=False)
+
         # TODO: Maybe add URL spec string as another entry method
 
     @staticmethod
     def __from_parsed__(args: argparse.Namespace):
-        return HydraRPC(args.host, args.port, args.user, args.password, args.json)
+        return HydraRPC(*HydraRPC.__parse_url__(args.rpc), getattr(args, "json", False))
 
     @staticmethod
     def __make_request_dict(name: str, *args) -> dict:
@@ -75,13 +113,7 @@ class HydraRPC:
             "id": 1,
             "jsonrpc": "2.0",
             "method": name,
-            "params": [
-                (_DFL(arg[1], arg[0])) if isinstance(arg, tuple) else (
-                    arg if (isinstance(arg, (str, int, float)) or not isinstance(arg, Iterable))
-                    else f"[{','.join(a for a in arg)}]"
-                )
-                for arg in filter(lambda arg: arg is not None, args)
-            ]
+            "params": list(filter(lambda arg: arg is not None, args))
         }
 
     def __call(self, name: str, *args):
@@ -97,7 +129,8 @@ class HydraRPC:
             return \
                 dictuple(name, result) if (isinstance(result, dict) and not self.__json) else (
                     result if self.__json else (
-                        [dictuple(f"{name}_{i}", item) for i, item in enumerate(result)] if isinstance(result, list) else str(result)
+                        [dictuple(f"{name}_{i}", item) for i, item in enumerate(result)] if isinstance(result, list)
+                        else result
                     )
                 )
 
@@ -130,55 +163,57 @@ class HydraRPC:
         if gas_limit is not None and sender_address is None:
             sender_address = ""
 
-        return self.__call("callcontract", (str, address), (str, data), (str, sender_address), (int, gas_limit))
+        return self.__call("callcontract", address, data, sender_address, gas_limit)
 
-    def getaccountinfo(self, address: str): return self.__call("getaccountinfo", (str, address))
+    def getaccountinfo(self, address: str): return self.__call("getaccountinfo", address)
 
     def getbestblockhash(self): return self.__call("getbestblockhash")
 
     def getblock(self, blockhash: str, verbosity: int = None):
-        return self.__call("getaccountinfo", (str, blockhash), (int, verbosity))
+        return self.__call("getblock", blockhash, verbosity)
 
     def getblockchaininfo(self): return self.__call("getblockchaininfo")
 
     def getblockcount(self): return self.__call("getblockcount")
 
-    def getblockhash(self, height: int): return self.__call("getblockhash", (int, height))
+    def getblockhash(self, height: int): return self.__call("getblockhash", height)
 
-    # TODO: Typing on all params from here down
+    def getblockheader(self, blockhash: str, verbose: bool = None):
+        return self.__call("getblockheader", blockhash, verbose)
 
-    def getblockheader(self, blockhash, verbose=None): return self.__call("getblockheader", blockhash, verbose)
-
-    def getblockstats(self, hash_or_height, stats=None): return self.__call("getblockstats", hash_or_height, stats)
+    def getblockstats(self, hash_or_height: (int, str), stats: (list, tuple) = None):
+        return self.__call("getblockstats", hash_or_height, stats)
 
     def getchaintips(self): return self.__call("getchaintips")
 
-    def getchaintxstats(self, nblocks=None, blockhash=None): return self.__call("getchaintxstats", nblocks, blockhash)
+    def getchaintxstats(self, nblocks: int = None, blockhash: str = None):
+        return self.__call("getchaintxstats", nblocks, blockhash)
 
-    def getcontractcode(self, address): return self.__call("getcontractcode", address)
+    def getcontractcode(self, address: str): return self.__call("getcontractcode", address)
 
     def getdifficulty(self): return self.__call("getdifficulty")
 
     def getestimatedannualroi(self): return self.__call("getestimatedannualroi")
 
-    def getmempoolancestors(self, txid, verbose=None): return self.__call("getmempoolancestors", txid, verbose)
+    def getmempoolancestors(self, txid: str, verbose: bool = None): return self.__call("getmempoolancestors", txid, verbose)
 
-    def getmempooldescendants(self, txid, verbose=None): return self.__call("getmempooldescendants", txid, verbose)
+    def getmempooldescendants(self, txid: str, verbose: bool = None): return self.__call("getmempooldescendants", txid, verbose)
 
-    def getmempoolentry(self, txid): return self.__call("getmempoolentry", txid)
+    def getmempoolentry(self, txid: str): return self.__call("getmempoolentry", txid)
 
     def getmempoolinfo(self): return self.__call("getmempoolinfo")
 
-    def getrawmempool(self, verbose=None): return self.__call("getrawmempool", verbose)
+    def getrawmempool(self, verbose: bool = None): return self.__call("getrawmempool", verbose)
 
-    def getstorage(self, address, block_num=None, index=None):
+    def getstorage(self, address: str, block_num: int = None, index: int = None):
         return self.__call("getstorage", address, block_num, index)
 
-    def gettransactionreceipt(self, hash_): return self.__call("gettransactionreceipt", hash_)
+    def gettransactionreceipt(self, hash_: str): return self.__call("gettransactionreceipt", hash_)
 
-    def gettxout(self, txid, n, include_mempool=None): return self.__call("gettxout", txid, n, include_mempool)
+    def gettxout(self, txid: str, n: int, include_mempool: bool = None):
+        return self.__call("gettxout", txid, n, include_mempool)
 
-    def gettxoutproof(self, txid_list, blockhash=None):
+    def gettxoutproof(self, txid_list: (list, tuple), blockhash: str = None):
         if isinstance(txid_list, str):
             txid_list = (txid_list,)
 
@@ -186,27 +221,29 @@ class HydraRPC:
 
     def gettxoutsetinfo(self): return self.__call("gettxoutsetinfo")
 
-    def listcontracts(self, start=None, display=None): return self.__call("listcontracts", start, display)
+    def listcontracts(self, start: int = None, max_display: int = None):
+        return self.__call("listcontracts", start, max_display)
 
-    def preciousblock(self, blockhash): return self.__call("preciousblock", blockhash)
+    def preciousblock(self, blockhash: str): return self.__call("preciousblock", blockhash)
 
-    def pruneblockchain(self, height): return self.__call("pruneblockchain", height)
+    def pruneblockchain(self, height: int): return self.__call("pruneblockchain", height)
 
-    def savemempool(self, height): return self.__call("savemempool", height)
+    def savemempool(self, height: int): return self.__call("savemempool", height)
 
-    def scantxoutset(self, action, scanobjects_list):
+    def scantxoutset(self, action: str, scanobjects_list: (list, tuple)):
         if isinstance(scanobjects_list, str):
             scanobjects_list = (scanobjects_list,)
         return self.__call("scantxoutset", action, scanobjects_list)
 
-    def searchlogs(self, from_block, to_block, address=None, topics=None, minconf=None):
+    def searchlogs(self, from_block: int, to_block: int, address: str = None, topics: (list, tuple) = None,
+                   minconf: int = None):
         return self.__call("searchlogs", from_block, to_block, address, topics, minconf)
 
-    def verifychain(self, checklevel=None, nblocks=None): return self.__call("verifychain", checklevel, nblocks)
+    def verifychain(self, checklevel: int = None, nblocks: int = None): return self.__call("verifychain", checklevel, nblocks)
 
-    def verifytxoutproof(self, proof): return self.__call("verifytxoutproof", proof)
+    def verifytxoutproof(self, proof: str): return self.__call("verifytxoutproof", proof)
 
-    def waitforlogs(self, from_block=None, to_block=None, filter_=None, minconf=None):
+    def waitforlogs(self, from_block: int = None, to_block: int = None, filter_: str = None, minconf: int = None):
         return self.__call("waitforlogs", from_block, to_block, filter_, minconf)
 
     # == Control ==
@@ -215,15 +252,15 @@ class HydraRPC:
 
     def getinfo(self): return self.__call("getinfo")
 
-    def getmemoryinfo(self, mode=None): return self.__call("getmemoryinfo", mode)
+    def getmemoryinfo(self, mode: str = None): return self.__call("getmemoryinfo", mode)
 
     def getoracleinfo(self): return self.__call("getoracleinfo")
 
     def getrpcinfo(self): return self.__call("getrpcinfo")
 
-    def help(self, command=None): return self.__call("help", command)
+    def help(self, command: str=None): return self.__call("help", command)
 
-    def logging(self, include_category_list=None, exclude_category_list=None):
+    def logging(self, include_category_list: (list, tuple) = None, exclude_category_list: (list, tuple) = None):
         return self.__call("logging", include_category_list, exclude_category_list)
 
     def stop(self): return self.__call("stop")
@@ -232,34 +269,37 @@ class HydraRPC:
 
     # == Generating ==
 
-    def generate(self, nblocks, maxtries=None): return self.__call("generate", nblocks, maxtries)
+    def generate(self, nblocks: int, maxtries: int = None): return self.__call("generate", nblocks, maxtries)
 
-    def generatetoaddress(self, nblocks, address, maxtries=None):
+    def generatetoaddress(self, nblocks: int, address: str, maxtries: int = None):
         return self.__call("generatetoaddress", nblocks, address, maxtries)
 
     # == Mining ==
 
-    def getblocktemplate(self, template_request): return self.__call("getblocktemplate", template_request)
+    def getblocktemplate(self, template_request: dict): return self.__call("getblocktemplate", template_request)
 
     def getmininginfo(self): return self.__call("getmininginfo")
 
-    def getnetworkhashps(self, nblocks=None, height=None): return self.__call("getnetworkhashps", nblocks, height)
+    def getnetworkhashps(self, nblocks: int = None, height: int = None): return self.__call("getnetworkhashps", nblocks, height)
 
     def getstakinginfo(self): return self.__call("getstakinginfo")
 
-    def submitblock(self, hexdata, dummy=None): return self.__call("submitblock", hexdata, dummy)
+    def submitblock(self, hexdata: str, dummy: str = None): return self.__call("submitblock", hexdata, dummy)
 
-    def submitheader(self, hexdata): return self.__call("submitheader", hexdata)
+    def submitheader(self, hexdata: str): return self.__call("submitheader", hexdata)
 
     # == Network ==
 
-    def addnode(self, node, command): return self.__call("addnode", node, command)
+    def addnode(self, node: str, command: str): return self.__call("addnode", node, command)
 
     def clearbanned(self): return self.__call("clearbanned")
 
-    def disconnectnode(self, address=None, nodeid=None): return self.__call("disconnectnode", address, nodeid)
+    def disconnectnode(self, address: str = None, nodeid: int = None):
+        if nodeid is not None and address is None:
+            address = ""
+        return self.__call("disconnectnode", address, nodeid)
 
-    def getaddednodeinfo(self, node=None): return self.__call("getaddednodeinfo", node)
+    def getaddednodeinfo(self, node: str = None): return self.__call("getaddednodeinfo", node)
 
     def getconnectioncount(self): return self.__call("getconnectioncount")
 
@@ -275,45 +315,47 @@ class HydraRPC:
 
     def ping(self): return self.__call("ping")
 
-    def setban(self, subnet, command, bantime=None, absolute=None):
+    def setban(self, subnet: str, command: str, bantime: int = None, absolute: bool = None):
         return self.__call("setban", subnet, command, bantime, absolute)
 
-    def setnetworkactive(self, state): return self.__call("setnetworkactive", state)
+    def setnetworkactive(self, state: str): return self.__call("setnetworkactive", state)
 
     # == Rawtransactions ==
 
-    def decoderawtransaction(self, hexstring, iswitness=None):
+    def decoderawtransaction(self, hexstring: str, iswitness: bool = None):
         return self.__call("decoderawtransaction", hexstring, iswitness)
 
-    def fromhexaddress(self, hexaddress): return self.__call("fromhexaddress", hexaddress)
+    def fromhexaddress(self, hexaddress: str): return self.__call("fromhexaddress", hexaddress)
 
-    def gethexaddress(self, address): return self.__call("gethexaddress", address)
+    def gethexaddress(self, address: str): return self.__call("gethexaddress", address)
 
-    def getrawtransaction(self, txid, verbose=None, blockhash=None):
+    def getrawtransaction(self, txid: str, verbose: bool = None, blockhash: str = None):
         return self.__call("getrawtransaction", txid, verbose, blockhash)
 
     # == Util ==
 
-    def createmultisig(self, nrequired, key_list, address_type=None):
+    def createmultisig(self, nrequired: int, key_list: (list, tuple), address_type: str = None):
         return self.__call("createmultisig", nrequired, key_list, address_type)
 
-    def deriveaddresses(self, descriptor, range_=None):
+    def deriveaddresses(self, descriptor: str, range_: (int, list, tuple) = None):
         return self.__call("deriveaddresses", descriptor, range_)
 
-    def estimatesmartfee(self, conf_target, estimate_mode=None):
+    def estimatesmartfee(self, conf_target: int, estimate_mode: str = None):
         return self.__call("estimatesmartfee", conf_target, estimate_mode)
 
-    def getdescriptorinfo(self, descriptor): return self.__call("getdescriptorinfo", descriptor)
+    def getdescriptorinfo(self, descriptor: str): return self.__call("getdescriptorinfo", descriptor)
 
-    def signmessagewithprivatekey(self, privkey, message):
+    def signmessagewithprivatekey(self, privkey: str, message: str):
         return self.__call("signmessagewithprivatekey", privkey, message)
 
-    def validateaddress(self, address): return self.__call("validateaddress", address)
+    def validateaddress(self, address: str): return self.__call("validateaddress", address)
 
-    def verifymessage(self, address, signature, message):
+    def verifymessage(self, address: str, signature: str, message: str):
         return self.__call("verifymessage", address, signature, message)
 
     # == Wallet ==
+
+    # TODO: Typed params from here down
 
     def addmultisigaddress(self, nrequired, key_list, label=None, address_type=None):
         if address_type is not None and label is None:
@@ -413,14 +455,14 @@ class HydraRPC:
 
     def reservebalance(self, reserve=None, amount=None): return self.__call("reservebalance", reserve, amount)
 
-    def sendtoaddress(self, address, amount, comment="", comment_to="", subtractfeefromamount="false",
-                      replaceable="false", conf_target="null", estimate_mode="", senderaddress="",
-                      change_to_sender="false"):
+    def sendtoaddress(self, address: str, amount: (int, float, str), comment: str = None, comment_to: str = None,
+                      subtractfeefromamount: bool = None, replaceable: bool = None, conf_target: (int, str) = None,
+                      estimate_mode: str = None, senderaddress: str = None, change_to_sender: bool = None):
         return self.__call("sendtoaddress", address, amount, comment, comment_to, subtractfeefromamount, replaceable,
                            conf_target, estimate_mode, senderaddress, change_to_sender)
 
-    def sendtocontract(self, contractaddress, datahex, amount=0, gas_limit=250000, senderaddress="", broadcast="true",
-                       change_to_sender="false"):
+    def sendtocontract(self, contractaddress, datahex, amount: (int, float, str) = None, gas_limit: int = None,
+                       senderaddress: str = None, broadcast: bool = None, change_to_sender: bool = None):
         return self.__call("sendtocontract", contractaddress, datahex, amount, gas_limit, senderaddress, broadcast,
                            change_to_sender)
 

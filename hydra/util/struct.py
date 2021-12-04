@@ -4,8 +4,17 @@ from collections import namedtuple
 from functools import reduce
 
 
+def namefor(key: str):
+    key = key.replace('-', '_').replace(' ', '_')
+
+    if key in ("from", "in", "import", "pass", "for", "while", "else"):
+        key += "_"
+
+    return key
+
+
 def dictuple(name: str, dic: dict):
-    return namedtuple(name, (k.replace('-', '_').replace(' ', '_') for k in dic.keys()))(
+    return namedtuple(name, (namefor(k) for k in dic.keys()))(
         *(
             [dictuple(f"{name}_{k}_{i}", vi) for i, vi in enumerate(v)]
             if (isinstance(v, (list, tuple)) and reduce(lambda i, j: i and isinstance(j, dict), v, True)) else
