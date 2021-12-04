@@ -2,12 +2,13 @@
 """
 from collections import namedtuple
 from functools import reduce
+import keyword
 
 
 def namefor(key: str):
     key = key.replace('-', '_').replace(' ', '_')
 
-    if key in ("from", "in", "import", "pass", "for", "while", "else"):
+    if keyword.iskeyword(key):
         key += "_"
 
     return key
