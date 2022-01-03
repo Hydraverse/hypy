@@ -140,7 +140,7 @@ class HydraRPC:
             return ""
 
         if isinstance(result, (str, int, float)):
-            return str(result)
+            return str(result or _DEFAULTS.get(type(result), _DEFAULTS[str]))
 
         if self.__json:
             return pprint.pformat(HydraRPC.__asdict__(result))
