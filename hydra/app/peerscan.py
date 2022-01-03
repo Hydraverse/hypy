@@ -21,6 +21,8 @@ class PeerScan(HydraApp):
         self.log.info(f"rpc: {self.args}")
         rpc = HydraRPC.__from_parsed__(self.args)
 
+        self.log.info(f"server reports {rpc.getconnectioncount()} connections")
+
         peers = rpc.getpeerinfo()
         addrs = []
 
@@ -57,6 +59,8 @@ class PeerScan(HydraApp):
 
             except HydraRPC.Error as err:
                 self.log.warn(f"addnode failed for {addr}: response={err.response} error={err.error}")
+
+        self.log.info(f"server now reports {rpc.getconnectioncount()} connections")
 
 
 if __name__ == "__main__":
