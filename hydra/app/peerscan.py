@@ -15,7 +15,7 @@ class PeerScan(HydraApp):
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
         parser.add_argument('-V', '--version', action='version', version='%(prog)s 1.0')
-        HydraRPC.__parser__(parser)
+        HydraRPC.__parser__(parser, allow_json=False)
 
     def run(self):
         self.log.info(f"rpc: {self.args}")
