@@ -8,7 +8,7 @@ from hydra import log
 from hydra.util.struct import dictuple, namedtuple
 
 
-APPS = "cli", "rpc", "test", "ascan", "lstx", "txvio"
+APPS = "cli", "rpc", "test", "ascan", "atrace", "lstx", "txvio"
 
 __all__ = "HydraApp", "APPS"
 
