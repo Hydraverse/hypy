@@ -42,7 +42,7 @@ class PeerScan(HydraApp):
 
         nodes_add = [(node.address, node.port) for node in filter(lambda n: n.address not in addrs, nodes)]
 
-        print(f"trying {len(nodes_add)} potential new peers")
+        self.log.info(f"trying {len(nodes_add)} potential new peers")
 
         for addr, port in nodes_add:
 
