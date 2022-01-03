@@ -23,6 +23,9 @@ class HydraRPC:
     __session = None
     __json = False
 
+    MAINNET_PORT = 3389
+    TESTNET_PORT = 13389
+
     class Error(BaseException):
         response: requests.Response = None
         error: namedtuple = None
@@ -39,12 +42,13 @@ class HydraRPC:
 
     def __init__(self, url: str = url, json_=False):
         self.__json = json_
-        self.url = HydraRPC.__parse_url__(url)
+        self.__mainnet, self.url = HydraRPC.__parse_url__(url) if not isinstance(url, tuple) else url
 
     @staticmethod
     def __parse_url__(url: str):
         url_split = urlsplit(url)
 
+        schemes_hydra = ("mainnet", "main", "testnet", "test")
         schemes_main = ("http", "mainnet", "main")
         schemes = schemes_main + ("testnet", "test")
 
@@ -53,10 +57,18 @@ class HydraRPC:
 
         netloc = str(url_split.netloc)
 
-        if url_split.port is None:
-            netloc += f":{3389 if url_split.scheme in schemes_main else 13389}"
+        port = url_split.port
 
-        return urlunsplit((
+        if port is None:
+            port = HydraRPC.MAINNET_PORT if url_split.scheme in schemes_main else HydraRPC.TESTNET_PORT
+            netloc += f":{port}"
+            mainnet = port == HydraRPC.MAINNET_PORT
+        elif url_split.scheme not in schemes_hydra:
+            raise ValueError("hydra scheme required when specifying port number")
+        else:
+            mainnet = url_split.scheme in schemes_main
+
+        return mainnet, urlunsplit((
             "http",
             netloc,
             url_split.path,
@@ -132,6 +144,10 @@ class HydraRPC:
             return result
 
         return dict(map(lambda kv: (kv[0], HydraRPC.__asdict__(kv[1])), result._asdict().items()))
+
+    @property
+    def mainnet(self):
+        return self.__mainnet
 
     def __string__(self, result, indent=0, indent_amt=4):
         q = lambda s: f'"{s}"' if isinstance(s, str) else str(s)
