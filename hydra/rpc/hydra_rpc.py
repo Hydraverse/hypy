@@ -19,7 +19,7 @@ _DEFAULTS = {
 
 
 class HydraRPC:
-    url: str = f"test://127.0.0.1"
+    url: str = f"main://127.0.0.1"
     __session = None
     __json = False
 
