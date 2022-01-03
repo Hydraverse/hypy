@@ -40,12 +40,12 @@ class HydraRPC:
         def __repr__(self) -> str:
             return repr(self.error) if self.error is not None else repr(self.response)
 
-    def __init__(self, url: str = url, json_=False):
+    def __init__(self, url: (str, tuple) = url, wallet: str = None, json_: bool = False):
         self.__json = json_
-        self.__mainnet, self.url = HydraRPC.__parse_url__(url) if not isinstance(url, tuple) else url
+        self.__mainnet, self.url = HydraRPC.__parse_url__(url, wallet) if not isinstance(url, tuple) else url
 
     @staticmethod
-    def __parse_url__(url: str):
+    def __parse_url__(url: str, wallet: str = None):
         url_split = urlsplit(url)
 
         schemes_hydra = ("mainnet", "main", "testnet", "test")
@@ -54,6 +54,11 @@ class HydraRPC:
 
         if url_split.scheme not in schemes:
             raise ValueError(f"Invalid scheme for url: {url}")
+
+        path = url_split.path
+
+        if wallet is not None:
+            path = os.path.join(path, f"/wallet/{wallet}")
 
         netloc = str(url_split.netloc)
 
@@ -78,7 +83,7 @@ class HydraRPC:
         return mainnet, urlunsplit((
             "http",
             netloc,
-            url_split.path,
+            path,
             url_split.query,
             url_split.fragment
         ))
@@ -99,13 +104,16 @@ class HydraRPC:
         parser.add_argument("-r", "--rpc", default=os.environ.get("HY_RPC", HydraRPC.url), type=str,
                             help="rpc url (env: HY_RPC)", required=require)
 
+        parser.add_argument("-w", "--wallet", default=os.environ.get("HY_RPC_WALLET", None), type=str,
+                            help="wallet name (env: HY_RPC_WALLET)", required=False)
+
         if allow_json:
             parser.add_argument("-j", "--json", action="store_true", default=False, help="output parseable json",
                                 required=False)
 
     @staticmethod
     def __from_parsed__(args: argparse.Namespace):
-        return HydraRPC(url=HydraRPC.__parse_url__(args.rpc), json_=getattr(args, "json", False))
+        return HydraRPC(url=HydraRPC.__parse_url__(args.rpc, args.wallet), json_=getattr(args, "json", False))
 
     @staticmethod
     def __make_request_dict(name: str, *args) -> dict:
