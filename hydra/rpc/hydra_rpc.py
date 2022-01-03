@@ -57,6 +57,13 @@ class HydraRPC:
 
         netloc = str(url_split.netloc)
 
+        if not url_split.username and not url_split.password:
+            cookie_path = os.path.join(os.environ.get("HOME"), ".hydra/.cookie")
+
+            if os.path.isfile(cookie_path):
+                userpass = open(cookie_path).read().strip()
+                netloc = f"{userpass}@{netloc}"
+
         port = url_split.port
 
         if port is None:
