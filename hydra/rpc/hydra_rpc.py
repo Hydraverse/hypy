@@ -309,7 +309,7 @@ class HydraRPC:
 
     def getnetworkinfo(self): return self.__call("getnetworkinfo")
 
-    def getnodeaddresses(self, count: int = None): return self.__call("getnodeaddresses", (int, count))
+    def getnodeaddresses(self, count: int = None): return self.__call("getnodeaddresses", count)
 
     def getpeerinfo(self): return self.__call("getpeerinfo")
 
