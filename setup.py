@@ -5,7 +5,7 @@ import re
 
 setup(
     name="hypy",
-    version="1.0.2",
+    version="1.0.3",
     description=hydra.__doc__,
     author="Halospace Foundation",
     author_email="contact@halospace.org",
