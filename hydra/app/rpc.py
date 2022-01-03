@@ -5,7 +5,7 @@ from hydra.rpc import HydraRPC
 from hydra import log
 
 
-@HydraApp.register(name="rpc", desc="rpc interface", version="1.01")
+@HydraApp.register(name="cli", desc="rpc cli interface", version="1.01")
 class HydraRPCApp(HydraApp):
 
     @staticmethod

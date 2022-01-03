@@ -2,7 +2,6 @@ from distutils.core import setup
 import pkg_resources
 import pathlib
 import hydra
-import re
 
 with pathlib.Path('requirements.txt').open() as requirements_txt:
     install_requires = [
@@ -13,7 +12,7 @@ with pathlib.Path('requirements.txt').open() as requirements_txt:
 
 setup(
     name="hypy",
-    version="1.1.1",
+    version="1.1.2",
     description=hydra.__doc__,
     author="Halospace Foundation",
     author_email="contact@halospace.org",
@@ -28,9 +27,9 @@ setup(
     entry_points=dict(
         console_scripts=[
             "hy = hydra.hy:Hydra.main",
-            "hy-cli = hydra.app.cli:HydraCLIApp.main",
-            "hy-rpc = hydra.app.rpc:HydraRPCApp.main",
+            "hy-cli = hydra.app.rpc:HydraRPCApp.main",
             "hy-test = hydra.test:Test.main",
+            "peerscan = hydra.app.peerscan:PeerScan.main"
         ]
     )
 )
