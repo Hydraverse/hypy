@@ -18,7 +18,7 @@ class TxListApp(HydraRPCApp):
 
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
-        HydraRPC.__parser__(parser, allow_json=False)
+        HydraRPC.__parser__(parser)
         parser.add_argument("-a", "--addrs", action="store_true", default=False, required=False,
                             help="also print TX input & output addresses")
         parser.add_argument("block_from", metavar="FROM", type=int,

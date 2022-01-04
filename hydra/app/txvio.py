@@ -18,7 +18,7 @@ class TxVIOApp(HydraRPCApp):
 
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
-        HydraRPC.__parser__(parser, allow_json=False)
+        HydraRPC.__parser__(parser)
         parser.add_argument("txid", metavar="TXID", type=str, help="TX ID string")
         parser.add_argument("block_hash", metavar="BLOCK_HASH", type=str, nargs="?", default=None,
                             help="Block hash if known (required without -txindex)")

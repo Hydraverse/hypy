@@ -22,7 +22,7 @@ class AScanApp(HydraRPCApp):
 
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
-        HydraRPC.__parser__(parser, allow_json=False)
+        HydraRPC.__parser__(parser)
         parser.add_argument("-c", "--count", type=int, default=10, help="number of recent transactions to load")
         parser.add_argument("-s", "--skip", type=int, default=0, help="number of recent transactions to skip")
         parser.add_argument("-R", "--recursive", action="store_true", help="scan vin addresses recursively")
