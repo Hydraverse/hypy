@@ -5,28 +5,24 @@ Requires `block_hash` when not using -txindex hydrad flag.
 """
 import argparse
 
-from hydra.app.cli import HydraRPCApp, HydraApp
+from hydra.app import HydraApp
 from hydra.rpc import HydraRPC
 from hydra.test import Test
 from hydra import log
 
 
 @HydraApp.register(name="txvio", desc=__doc__, version="1.01")
-class TxVIOApp(HydraRPCApp):
-    rpc = None
+class TxVIOApp(HydraApp):
     assoc = {}
 
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
-        HydraRPC.__parser__(parser)
         parser.add_argument("txid", metavar="TXID", type=str, help="TX ID string")
         parser.add_argument("block_hash", metavar="BLOCK_HASH", type=str, nargs="?", default=None,
                             help="Block hash if known (required without -txindex)")
 
     def run(self):
         self.log.info(f"txinp: {self.args}")
-
-        self.rpc = HydraRPC.__from_parsed__(self.args)
 
         try:
             addresses_vin, addresses_vout = TxVIOApp.get_vinout_addresses(
@@ -35,7 +31,7 @@ class TxVIOApp(HydraRPCApp):
 
             TxVIOApp.print_addresses(addresses_vin, addresses_vout)
 
-        except HydraRPC.Error as err:
+        except HydraRPC.Exception as err:
 
             if log.level() <= log.INFO:
                 raise

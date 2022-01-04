@@ -1,22 +1,9 @@
 import os
-import requests
 import argparse
-import pprint
 import json
-from collections import namedtuple
 from urllib.parse import urlsplit, urlunsplit
 
 from hydra.rpc.base import BaseRPC
-from hydra.util.struct import dictuple
-
-
-_DEFAULTS = {
-    str: '""',
-    int: "0",
-    float: "0.0",
-    list: "[]",
-    bool: "False"
-}
 
 
 class HydraRPC(BaseRPC):
@@ -90,7 +77,7 @@ class HydraRPC(BaseRPC):
                 raise
 
     @staticmethod
-    def __parser__(parser: argparse.ArgumentParser, require=False, json_opt=False, pretty_opt=False):
+    def __parser__(parser: argparse.ArgumentParser, require=False, json_opt=False):
 
         parser.add_argument("-r", "--rpc", default=os.environ.get("HY_RPC", HydraRPC.__url), type=str,
                             help="rpc url (env: HY_RPC)", required=require)
@@ -99,25 +86,19 @@ class HydraRPC(BaseRPC):
                             help="wallet name (env: HY_RPC_WALLET)", required=False)
 
         if json_opt:
+            group = parser.add_mutually_exclusive_group(required=False)
 
-            if pretty_opt:
-                group = parser.add_mutually_exclusive_group(required=False)
-
-                group.add_argument(
-                    "-J", "--json-pretty", action="store_true", help="output parseable json",
-                    default=False,
-                    required=False
-                )
-
-                parser = group
-
-            parser.add_argument(
-                "-j", "--json", action="store_true", help="output parseable json",
+            group.add_argument(
+                "-J", "--json-pretty", action="store_true", help="output parseable json",
                 default=False,
                 required=False
             )
 
-        return parser
+            group.add_argument(
+                "-j", "--json", action="store_true", help="output parseable json",
+                default=False,
+                required=False
+            )
 
     @staticmethod
     def __from_parsed__(args: argparse.Namespace):
@@ -127,8 +108,9 @@ class HydraRPC(BaseRPC):
     def mainnet(self):
         return self.__mainnet
 
-    def call(self, name: str, *args):
-        return super().call(name, *filter(lambda a: a is not None, args)).Value
+    def call(self, name: str, *args, raw=False):
+        result = super().call(name, *filter(lambda a: a is not None, args))
+        return result if raw else result.Value
 
     # == Blockchain ==
 

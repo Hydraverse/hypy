@@ -1,6 +1,7 @@
 import sys
 import argparse
 import pprint
+import json
 
 from hydra.app import HydraApp
 from hydra.rpc import HydraRPC
@@ -12,7 +13,6 @@ class HydraRPCApp(HydraApp):
 
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
-        HydraRPC.__parser__(parser, json_opt=True, pretty_opt=True)
         parser.add_argument("call", metavar="CALL", help="rpc function to call")
         parser.add_argument("params", nargs="*", type=HydraRPC.__parse_param__,
                             metavar="PARAM", help="rpc function parameters")
@@ -23,34 +23,24 @@ class HydraRPCApp(HydraApp):
         )
 
     def run(self):
-        self.log.info(f"rpc: {self.args}")
-        rpc = HydraRPC.__from_parsed__(self.args)
+        rpc = self.rpc
 
-        call = getattr(rpc, self.args.call)
+        result = rpc.call(self.args.call, *self.args.params, raw=True)
 
-        try:
-            result = call(*self.args.params)
+        if self.args.json or self.args.json_pretty:
+            print(json.dumps(result.__serialize__(name=self.args.call), indent=2 if self.args.json_pretty else None))
 
-            if self.args.json or self.args.json_pretty:
-                print(str(result) if not self.args.json_pretty else pprint.pformat(result))
+        else:
+            result = result.Value
 
-            else:
-                spaces = (lambda lvl: "  " * lvl) if not self.args.full else lambda lvl: ""
+            spaces = (lambda lvl: "  " * lvl) if not self.args.full else lambda lvl: ""
 
-                # for line in HydraRPC.Result.render(self.args.call, result, spaces=spaces, full=self.args.full):
-                #     print(line)
+            # for line in HydraRPC.Result.render(self.args.call, result, spaces=spaces, full=self.args.full):
+            #     print(line)
 
-                print("\n".join(
-                    HydraRPC.Result.render(self.args.call, result, spaces=spaces, full=self.args.full)
-                ))
-
-        except HydraRPC.Error as err:
-
-            if log.level() <= log.INFO:
-                raise
-
-            print(err)
-            exit(-1)
+            print("\n".join(
+                HydraRPC.Result.render(self.args.call, result, spaces=spaces, full=self.args.full)
+            ))
 
 
 if __name__ == "__main__":

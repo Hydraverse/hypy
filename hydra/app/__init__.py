@@ -1,10 +1,11 @@
 """Hydra Applications.
 """
-import sys
 import argparse
 import importlib
+import json
 
 from hydra import log
+from hydra.rpc import HydraRPC
 from hydra.util.struct import dictuple, namedtuple
 
 
@@ -42,6 +43,8 @@ class HydraApp:
 
             parser = argparse.ArgumentParser()
 
+            HydraRPC.__parser__(parser, json_opt=True)
+
             info.cls.parser(parser)
 
             for action in parser._actions:
@@ -58,6 +61,8 @@ class HydraApp:
 
         self.args = dictuple("args", self.args)
 
+        self.rpc = HydraRPC.__from_parsed__(self.args)
+
         super().__init__()
 
         if self.__class__.setup is not HydraApp.setup:
@@ -68,7 +73,17 @@ class HydraApp:
 
     def __auto_setup_run(self, *args, **kwds):
         self.__setup()
-        return self.__run(*args, **kwds)
+
+        try:
+            return self.__run(*args, **kwds)
+
+        except HydraRPC.Exception as err:
+
+            if log.level() <= log.INFO:
+                raise
+
+            print(json.dumps(err.__serialize__(), indent=2 if self.args.json_pretty else None))
+            exit(-1)
 
     def __auto_setup_fail(self, *args, **kwds):
         raise RuntimeError("direct calls to setup() disallowed.")

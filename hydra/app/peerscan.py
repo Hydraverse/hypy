@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
-import argparse
-
 from hydra.app import HydraApp
 from hydra.rpc import HydraRPC
-from hydra.test import Test
 
 import re
 
@@ -12,17 +9,10 @@ import re
 @HydraApp.register(name="peerscan", desc="Connect to new nodes", version="1.1")
 class PeerScan(HydraApp):
 
-    @staticmethod
-    def parser(parser: argparse.ArgumentParser):
-        HydraRPC.__parser__(parser)
-
     def run(self):
-        self.log.info(f"rpc: {self.args}")
-        rpc = HydraRPC.__from_parsed__(self.args)
+        self.log.info(f"server reports {self.rpc.getconnectioncount()} connections")
 
-        self.log.info(f"server reports {rpc.getconnectioncount()} connections")
-
-        peers = rpc.getpeerinfo()
+        peers = self.rpc.getpeerinfo()
         addrs = []
 
         for peer in peers:
@@ -37,7 +27,7 @@ class PeerScan(HydraApp):
 
         self.log.info(f"loaded {len(peers)} peers")
 
-        nodes = rpc.getnodeaddresses(10000)
+        nodes = self.rpc.getnodeaddresses(10000)
 
         self.log.info(f"loaded {len(nodes)} nodes")
 
@@ -51,15 +41,15 @@ class PeerScan(HydraApp):
             (self.log.debug if port != HydraRPC.MAINNET_PORT else self.log.info)(f"{addr}")
 
             try:
-                result = rpc.addnode(addr, "onetry")
+                result = self.rpc.addnode(addr, "onetry")
 
                 if result is not None:
                     self.log.info(f"result: {result}")
 
-            except HydraRPC.Error as err:
-                self.log.warn(f"addnode failed for {addr}: response={err.response} result={err.result}")
+            except HydraRPC.Exception as err:
+                self.log.warn(f"addnode failed for {addr}: response={err.response} result={err.error}")
 
-        self.log.info(f"server now reports {rpc.getconnectioncount()} connections")
+        self.log.info(f"server now reports {self.rpc.getconnectioncount()} connections")
 
 
 if __name__ == "__main__":

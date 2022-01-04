@@ -3,22 +3,20 @@
 Display the transactions within the given range of blocks.
 """
 import argparse
+import json
 
-from hydra.app.cli import HydraRPCApp, HydraApp
+from hydra.app.cli import HydraApp
 from hydra.rpc import HydraRPC
 from hydra.test import Test
-from hydra import log
 
 from .txvio import TxVIOApp
 
 
 @HydraApp.register(name="lstx", desc=__doc__, version="1.01")
-class TxListApp(HydraRPCApp):
-    rpc = None
+class TxListApp(HydraApp):
 
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
-        HydraRPC.__parser__(parser)
         parser.add_argument("-a", "--addrs", action="store_true", default=False, required=False,
                             help="also print TX input & output addresses")
         parser.add_argument("block_from", metavar="FROM", type=int,
@@ -27,10 +25,6 @@ class TxListApp(HydraRPCApp):
                             help="block index relative to current block height, default latest")
 
     def run(self):
-        self.log.info(f"lstx: {self.args}")
-
-        self.rpc = HydraRPC.__from_parsed__(self.args)
-
         try:
             block_count = self.rpc.getblockcount()
 
@@ -58,12 +52,12 @@ class TxListApp(HydraRPCApp):
                         addrs_vin, addrs_vout = TxVIOApp.get_vinout_addresses(self.rpc, txid, block_hash)
                         TxVIOApp.print_addresses(addrs_vin, addrs_vout, 12)
 
-        except HydraRPC.Error as err:
+        except HydraRPC.Exception as err:
 
-            if log.level() <= log.INFO:
+            if self.log.level() <= self.log.INFO:
                 raise
 
-            print(err)
+            print(json.dumps(err.__serialize__(), indent=2 if self.args.json_pretty else None))
             exit(-1)
 
     @staticmethod

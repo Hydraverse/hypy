@@ -1,7 +1,6 @@
 from __future__ import annotations
+
 from requests import Response, Session
-from functools import reduce
-import pprint
 
 from hydra import log
 
@@ -10,19 +9,25 @@ class BaseRPC:
     __url = None
     __session = None
 
-    class Error(BaseException):
+    class Exception(BaseException):
         response: Response = None
-        result: BaseRPC.Result = None
+        error: BaseRPC.Result = None
 
         def __init__(self, response: Response):
             self.response = response
-            self.result = BaseRPC.Result(response.json()) if len(response.content) else None
+            self.error = BaseRPC.Result(response.json()) if len(response.content) else None
 
         def __str__(self) -> str:
-            return str(self.result) if self.result is not None else str(self.response)
+            return str(self.error) if self.error is not None else str(self.response)
 
         def __repr__(self) -> str:
-            return repr(self.result) if self.result is not None else repr(self.response)
+            return repr(self.error) if self.error is not None else repr(self.response)
+
+        def __serialize__(self):
+            return {
+                "response": str(self.response),
+                "error": self.error.__serialize__(name=None) if self.error else None
+            }
 
     class Result(dict):
 
@@ -88,6 +93,12 @@ class BaseRPC:
                 else result if result is not ... \
                 else error if error is not ... \
                 else self
+
+        def __serialize__(self, name="value"):
+            o_v = self.Value
+            return o_v if name is None else dict(
+                (k, getattr(v, "__serialize__", lambda: v)()) for k, v in o_v.items()
+            ) if isinstance(o_v, dict) else {name: o_v}
 
         @staticmethod
         def render(name: str, result, spaces=lambda lvl: "  " * lvl, longest=None, full=False):
@@ -156,12 +167,12 @@ class BaseRPC:
         )
 
         if not rsp.ok:
-            raise BaseRPC.Error(rsp)
+            raise BaseRPC.Exception(rsp)
 
         json = rsp.json()
 
         if json["error"]:
-            raise BaseRPC.Error(rsp)
+            raise BaseRPC.Exception(rsp)
 
         log.debug(f"result: {json}")
 

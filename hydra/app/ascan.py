@@ -6,18 +6,16 @@ import os.path
 import sys
 import argparse
 
-from hydra.app.cli import HydraRPCApp, HydraApp
+from hydra.app.cli import HydraApp
 from hydra.rpc import HydraRPC
 from hydra.test import Test
 from hydra.hy import Hydra
-from hydra import log
 
 from .txvio import TxVIOApp
 
 
 @HydraApp.register(name="ascan", desc=__doc__, version="1.01")
-class AScanApp(HydraRPCApp):
-    rpc = None
+class AScanApp(HydraApp):
     out = None
 
     @staticmethod
@@ -32,8 +30,6 @@ class AScanApp(HydraRPCApp):
 
     def run(self):
         self.log.info(f"ascan: {self.args}")
-
-        self.rpc = HydraRPC.__from_parsed__(self.args)
 
         address = self.args.address
         addresses = set()
@@ -51,25 +47,16 @@ class AScanApp(HydraRPCApp):
 
             self.out = open(filename, "a")
 
-        try:
-            for (addr_scan, addr_found) in AScanApp.ascan(self.rpc, address, self.args.count, self.args.skip,
-                                                          addr_found=addresses,
-                                                          recursive=self.args.recursive):
-                line = f"{addr_scan}: {addr_found}\n"
-                print(line, end="")
-                sys.stdout.flush()
+        for (addr_scan, addr_found) in AScanApp.ascan(self.rpc, address, self.args.count, self.args.skip,
+                                                      addr_found=addresses,
+                                                      recursive=self.args.recursive):
+            line = f"{addr_scan}: {addr_found}\n"
+            print(line, end="")
+            sys.stdout.flush()
 
-                if self.out is not None:
-                    self.out.write(line)
-                    self.out.flush()
-
-        except HydraRPC.Error as err:
-
-            if log.level() <= log.INFO:
-                raise
-
-            print(err)
-            exit(-1)
+            if self.out is not None:
+                self.out.write(line)
+                self.out.flush()
 
     @staticmethod
     def ascan(rpc, address, count: int, skip: int = None, addr_found: set = None, recursive=False):

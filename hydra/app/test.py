@@ -4,12 +4,11 @@ import argparse
 from hydra.app import HydraApp
 
 
-@HydraApp.register(name="test", desc="test interface")
+@HydraApp.register(name="test", desc="test interface", version="1.0")
 class HydraTestApp(HydraApp):
 
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
-        parser.add_argument('-V', '--version', action='version', version='%(prog)s 1.0')
         parser.add_argument('target', default="-", metavar='TARGET', help='test target or "-" to skip.')
         parser.add_argument('args', default=[], nargs=argparse.REMAINDER, metavar='ARGS', help='test args.')
 
