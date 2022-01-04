@@ -26,7 +26,6 @@ class ATraceApp(HydraApp):
         parser.add_argument("address", metavar="ADDR", type=str, help="address to trace")
 
     def run(self):
-
         address = self.args.address
         blocktime = 2**32
         amount = 0

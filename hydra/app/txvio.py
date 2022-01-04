@@ -22,22 +22,12 @@ class TxVIOApp(HydraApp):
                             help="Block hash if known (required without -txindex)")
 
     def run(self):
-        self.log.info(f"txinp: {self.args}")
+        addresses_vin, addresses_vout = TxVIOApp.get_vinout_addresses(
+            self.rpc, self.args.txid, self.args.block_hash
+        )
 
-        try:
-            addresses_vin, addresses_vout = TxVIOApp.get_vinout_addresses(
-                self.rpc, self.args.txid, self.args.block_hash
-            )
+        TxVIOApp.print_addresses(addresses_vin, addresses_vout)
 
-            TxVIOApp.print_addresses(addresses_vin, addresses_vout)
-
-        except HydraRPC.Exception as err:
-
-            if log.level() <= log.INFO:
-                raise
-
-            print(err)
-            exit(-1)
 
     @staticmethod
     def print_addresses(addresses_vin: set, addresses_vout: set, indent: int = 0):

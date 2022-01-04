@@ -27,8 +27,6 @@ class AScanApp(HydraApp):
         parser.add_argument("address", metavar="ADDR", type=str, help="address to scan")
 
     def run(self):
-        self.log.info(f"ascan: {self.args}")
-
         address = self.args.address
         addresses = set()
 

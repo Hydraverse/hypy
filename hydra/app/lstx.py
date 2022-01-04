@@ -25,40 +25,32 @@ class TxListApp(HydraApp):
                             help="block index relative to current block height, default latest")
 
     def run(self):
-        try:
-            block_count = self.rpc.getblockcount()
+        block_count = self.rpc.getblockcount()
 
-            block_from = self.args.block_from if self.args.block_from == 0 else (
-                    block_count + self.args.block_from if self.args.block_from < 0 else self.args.block_from
-            )
+        block_from = self.args.block_from if self.args.block_from == 0 else (
+                block_count + self.args.block_from if self.args.block_from < 0 else self.args.block_from
+        )
 
-            block_to = (block_count if block_from <= 0 else block_from) if self.args.block_to == 0 else (
-                    block_count + self.args.block_to if self.args.block_to < 0 else self.args.block_to
-            )
+        block_to = (block_count if block_from <= 0 else block_from) if self.args.block_to == 0 else (
+                block_count + self.args.block_to if self.args.block_to < 0 else self.args.block_to
+        )
 
-            if block_from > block_to:
-                raise argparse.ArgumentError(self.args.block_from, "block_from must be <= block_to")
+        if block_from > block_to:
+            raise argparse.ArgumentError(self.args.block_from, "block_from must be <= block_to")
 
-            block_tx = TxListApp.get_block_range_tx(self.rpc, block_from, block_to)
+        block_tx = TxListApp.get_block_range_tx(self.rpc, block_from, block_to)
 
-            for height, (block_hash, txes) in block_tx.items():
-                print(str(height).ljust(7, " "), block_hash)
+        for height, (block_hash, txes) in block_tx.items():
+            print(str(height).ljust(7, " "), block_hash)
 
-                if not self.args.addrs:
-                    print("\n".join(" " * 8 + txid for txid in txes))
-                else:
-                    for txid in txes:
-                        print(" " * 8 + txid)
-                        addrs_vin, addrs_vout = TxVIOApp.get_vinout_addresses(self.rpc, txid, block_hash)
-                        TxVIOApp.print_addresses(addrs_vin, addrs_vout, 12)
+            if not self.args.addrs:
+                print("\n".join(" " * 8 + txid for txid in txes))
+            else:
+                for txid in txes:
+                    print(" " * 8 + txid)
+                    addrs_vin, addrs_vout = TxVIOApp.get_vinout_addresses(self.rpc, txid, block_hash)
+                    TxVIOApp.print_addresses(addrs_vin, addrs_vout, 12)
 
-        except HydraRPC.Exception as err:
-
-            if self.log.level() <= self.log.INFO:
-                raise
-
-            print(json.dumps(err.__serialize__(), indent=2 if self.args.json_pretty else None))
-            exit(-1)
 
     @staticmethod
     def get_block_range_tx(rpc: HydraRPC, height_from: int, height_to: int) -> dict:

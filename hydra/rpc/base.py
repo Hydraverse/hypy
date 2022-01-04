@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from requests import Response, Session
+from attrdict import AttrDict
 
 from hydra import log
 
@@ -29,59 +30,32 @@ class BaseRPC:
                 "error": self.error.__serialize__(name=None) if self.error else None
             }
 
-    class Result(dict):
+    class Result(AttrDict):
+
+        @staticmethod
+        def __conv_list(lst):
+            if isinstance(lst, list):
+                return [
+                    BaseRPC.Result(itm) if isinstance(itm, dict) else
+                    BaseRPC.Result.__conv_list(itm) if isinstance(itm, list) else
+                    itm
+                    for itm in lst
+                ]
+            return lst
 
         def __init__(self, json: dict):
 
-            def _convert(obj):
+            for key, value in json.items():
+                if isinstance(value, dict):
+                    json[key] = BaseRPC.Result(value)
+                elif isinstance(value, list):
+                    json[key] = BaseRPC.Result.__conv_list(value)
 
-                if isinstance(obj, dict):
-                    for k, v in obj.items():
-                        if isinstance(v, dict):
-                            obj[k] = BaseRPC.Result(v)
-                        elif isinstance(v, list):
-                            obj[k] = [_convert(item) for item in v]
-
-                if isinstance(obj, list):
-                    for idx, val in enumerate(obj):
-                        if isinstance(val, dict):
-                            obj[idx] = BaseRPC.Result(val)
-                        elif isinstance(val, list):
-                            obj[idx] = [_convert(item) for item in val]
-
-                return obj
-
-            if "result" in json or "error" in json:
-                if "result" in json:
-                    json["result"] = _convert(json["result"])
-
-                if "error" in json:
-                    json["error"] = _convert(json["error"])
-
-                super().__init__(json)
-            else:
-                super().__init__(_convert(json))
-
-        def __getattr__(self, item):
-            return self.result.getdefault(item, self[item]) if "result" in self else self[item]
-
-        def __setattr__(self, key, value):
-            if "result" in self:
-                self.result[key] = value
-            else:
-                self[key] = value
+            super(BaseRPC.Result, self).__init__(json)
 
         def __str__(self):
             value = self.Value
             return str(value) if value is not self else super().__str__()
-
-        @property
-        def result(self):
-            return self["result"]
-
-        @property
-        def error(self):
-            return self["error"]
 
         # noinspection PyPep8Naming
         @property
