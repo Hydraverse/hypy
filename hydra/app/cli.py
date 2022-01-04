@@ -37,8 +37,12 @@ class HydraRPCApp(HydraApp):
             else:
                 spaces = (lambda lvl: "  " * lvl) if not self.args.full else lambda lvl: ""
 
-                for line in HydraRPC.Result.render(self.args.call, result, spaces=spaces, full=self.args.full):
-                    print(line)
+                # for line in HydraRPC.Result.render(self.args.call, result, spaces=spaces, full=self.args.full):
+                #     print(line)
+
+                print("\n".join(
+                    HydraRPC.Result.render(self.args.call, result, spaces=spaces, full=self.args.full)
+                ))
 
         except HydraRPC.Error as err:
 
@@ -47,9 +51,6 @@ class HydraRPCApp(HydraApp):
 
             print(err)
             exit(-1)
-
-
-
 
 
 if __name__ == "__main__":
