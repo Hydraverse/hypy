@@ -117,6 +117,8 @@ class HydraRPC(BaseRPC):
                 required=False
             )
 
+        return parser
+
     @staticmethod
     def __from_parsed__(args: argparse.Namespace):
         return HydraRPC(url=HydraRPC.__parse_url__(args.rpc, args.wallet))

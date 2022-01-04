@@ -1,6 +1,6 @@
+import sys
 import argparse
 import pprint
-from functools import reduce
 
 from hydra.app import HydraApp
 from hydra.rpc import HydraRPC
@@ -16,6 +16,11 @@ class HydraRPCApp(HydraApp):
         parser.add_argument("call", metavar="CALL", help="rpc function to call")
         parser.add_argument("params", nargs="*", type=HydraRPC.__parse_param__,
                             metavar="PARAM", help="rpc function parameters")
+        parser.add_argument(
+            "-f", "--full", action="store_true", help="output full names (non-json only)",
+            default=False,
+            required=False
+        )
 
     def run(self):
         self.log.info(f"rpc: {self.args}")
@@ -27,11 +32,13 @@ class HydraRPCApp(HydraApp):
             result = call(*self.args.params)
 
             if self.args.json or self.args.json_pretty:
-
-                print(result if not self.args.json_pretty else pprint.pformat(result))
+                print(str(result) if not self.args.json_pretty else pprint.pformat(result))
 
             else:
-                HydraRPCApp.render(self.args.call, result)
+                spaces = (lambda lvl: "  " * lvl) if not self.args.full else lambda lvl: ""
+
+                for line in HydraRPC.Result.render(self.args.call, result, spaces=spaces, full=self.args.full):
+                    print(line)
 
         except HydraRPC.Error as err:
 
@@ -41,44 +48,7 @@ class HydraRPCApp(HydraApp):
             print(err)
             exit(-1)
 
-    @staticmethod
-    def render(name, result, print_=print):
-        if not isinstance(result, (list, dict)):
-            print_(result)
-            return
 
-        flat = HydraRPCApp.flatten(name, result)
-
-        spaces = lambda lvl: ""  # " " * lvl
-
-        longest = max(len(v[0]) + len(spaces(v[2])) for (_, v) in flat.items()) + 4
-
-        for label, value, level in flat.values():
-
-            print_(f"{spaces(level)}{label}".ljust(longest) + (pprint.pformat(value) if value is not ... else ""))
-
-    @staticmethod
-    def flatten(name: str, result, level=0):
-        lines = {name: [name, ..., level]}
-
-        def _reduce(da, db):
-            da.update(db)
-            return da
-
-        if isinstance(result, (list, dict)):
-            lines.update(
-                reduce(lambda da, db: _reduce(da, db), (
-                        HydraRPCApp.flatten(f"{name}[{index}]", value, level=level + 1)
-                        for (index, value) in enumerate(result)
-                    ) if isinstance(result, list) else (
-                        HydraRPCApp.flatten(f"{name}.{key}", value, level=level + 1)
-                        for (key, value) in result.items()
-                    ), {})
-            )
-        else:
-            lines[name][1] = result
-
-        return lines
 
 
 

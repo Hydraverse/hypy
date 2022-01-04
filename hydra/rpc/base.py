@@ -1,5 +1,7 @@
 from __future__ import annotations
 from requests import Response, Session
+from functools import reduce
+import pprint
 
 from hydra import log
 
@@ -86,6 +88,43 @@ class BaseRPC:
                 else result if result is not ... \
                 else error if error is not ... \
                 else self
+
+        @staticmethod
+        def render(name: str, result, spaces=lambda lvl: "  " * lvl, longest=None, full=False):
+
+            if not isinstance(result, (list, dict)):
+                yield str(result)
+                return
+
+            flat = BaseRPC.Result.flatten(name, result, full=full)
+
+            if not longest:
+                flat = list(flat)
+                longest = max(len(row[0]) + len(spaces(row[2])) for row in flat) + 4
+
+            for label, value, level in flat:
+                yield f"{spaces(level)}{label}".ljust(longest) \
+                      + (str(value) if value is not ... else "")
+
+        @staticmethod
+        def flatten(name: str, result, level: int = 0, full: bool = False) -> dict:
+            if not isinstance(result, (list, dict)):
+                yield name, result, level
+                return
+
+            yield name, ..., level
+
+            if isinstance(result, list):
+                for index, value in enumerate(result):
+                    yield from BaseRPC.Result.flatten(
+                        (name if full else "")  # name.rsplit(".", 1)[0] if "." in name else name)
+                        + f"[{index}]", value, level=level + 1, full=full
+                    )
+            else:
+                for key, value in result.items():
+                    yield from BaseRPC.Result.flatten(
+                        (name if full else "") + f".{key}", value, level=level + 1, full=full
+                    )
 
     def __init__(self, url: str):
         self.__url = url
