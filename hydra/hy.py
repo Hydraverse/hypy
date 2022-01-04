@@ -52,11 +52,11 @@ class Hydra:
         else:
             sys.argv[0] = "hy"
 
-        parser = Hydra.parser()
+        app = Hydra.global_app()
+
+        parser = Hydra.parser(app)
         argcomplete.autocomplete(parser)
         args = parser.parse_args()
-
-        app = Hydra.global_app()
 
         if app:
             args.app = app.name
@@ -82,10 +82,8 @@ class Hydra:
             sys.exit(-1)
 
     @staticmethod
-    def parser():
+    def parser(app):
         parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description=__doc__)
-
-        app = Hydra.global_app()
 
         if app:
             Hydra.__parser_base(app, parser)
@@ -161,6 +159,11 @@ class Hydra:
 
         if base != "hy":
             return HydraApp.get(os.path.splitext(base)[0])
+
+        for idx, arg in enumerate(sys.argv):
+            if idx > 0 and not arg.startswith("-"):
+                sys.argv[idx:idx+1] = []
+                return HydraApp.get(arg)
 
     @staticmethod
     def arg_env_or_req(key):

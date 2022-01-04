@@ -9,12 +9,11 @@ from hydra.test import Test
 import re
 
 
-@HydraApp.register(name="peer-scan", desc="Connect to new nodes")
+@HydraApp.register(name="peerscan", desc="Connect to new nodes", version="1.1")
 class PeerScan(HydraApp):
 
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
-        parser.add_argument('-V', '--version', action='version', version='%(prog)s 1.0')
         HydraRPC.__parser__(parser)
 
     def run(self):

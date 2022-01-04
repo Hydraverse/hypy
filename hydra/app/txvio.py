@@ -5,7 +5,7 @@ Requires `block_hash` when not using -txindex hydrad flag.
 """
 import argparse
 
-from hydra.app.rpc import HydraRPCApp, HydraApp
+from hydra.app.cli import HydraRPCApp, HydraApp
 from hydra.rpc import HydraRPC
 from hydra.test import Test
 from hydra import log

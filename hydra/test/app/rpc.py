@@ -1,6 +1,6 @@
 from hydra.test import Test
 
-from hydra.app.rpc import HydraRPCApp
+from hydra.app.cli import HydraRPCApp
 
 
 @Test.register()
