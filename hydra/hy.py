@@ -6,6 +6,7 @@ import os
 import argparse
 import argcomplete
 
+from hydra.rpc import HydraRPC
 from hydra.app import HydraApp
 from hydra import log
 
@@ -114,11 +115,12 @@ class Hydra:
 
     @staticmethod
     def __parser_base(app, parser):
-
         if app.version:
             parser.add_argument(f'-V', f'--version', action='version', version=f'hy-{app.name} {app.version}')
 
         log.log_parser(parser)
+
+        HydraRPC.__parser__(parser)
 
     @staticmethod
     def slice_type(slce):

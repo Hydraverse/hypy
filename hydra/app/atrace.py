@@ -21,7 +21,6 @@ class ATraceApp(HydraApp):
 
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
-        HydraRPC.__parser__(parser)
         parser.add_argument("-c", "--count", type=int, default=1000000,
                             help="max number of recent transactions to load")
         parser.add_argument("address", metavar="ADDR", type=str, help="address to trace")

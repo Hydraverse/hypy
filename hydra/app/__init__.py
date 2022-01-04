@@ -26,6 +26,7 @@ class HydraApp:
     hy = None
     args = None
     log = None
+    rpc = None
 
     # noinspection PyProtectedMember
     def __init__(self, *, hy=None, **kwds):
@@ -42,8 +43,6 @@ class HydraApp:
             info = self.info
 
             parser = argparse.ArgumentParser()
-
-            HydraRPC.__parser__(parser, json_opt=True)
 
             info.cls.parser(parser)
 
