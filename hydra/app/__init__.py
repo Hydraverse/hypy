@@ -27,6 +27,7 @@ class HydraApp:
     args = None
     log = None
     rpc = None
+    __run = None
 
     # noinspection PyProtectedMember
     def __init__(self, *, hy=None, **kwds):
@@ -64,14 +65,11 @@ class HydraApp:
 
         super().__init__()
 
-        if self.__class__.setup is not HydraApp.setup:
-            self.__setup = self.setup
-            self.setup = self.__auto_setup_fail
-            self.__run = self.run
-            self.run = self.__auto_setup_run
+        self.__run = self.run
+        self.run = self.__auto_setup_run
 
     def __auto_setup_run(self, *args, **kwds):
-        self.__setup()
+        self.setup()
 
         try:
             return self.__run(*args, **kwds)
@@ -102,7 +100,7 @@ class HydraApp:
     #     raise ModuleNotFoundError
 
     def setup(self):
-        return self.__auto_setup_fail()
+        pass
 
     def run(self, *args, **kwds):
         raise NotImplementedError
