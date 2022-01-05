@@ -27,8 +27,8 @@ setup(
     entry_points=dict(
         console_scripts=[
             "hy = hydra.hy:Hydra.main",
-            "hy-cli = hydra.app.cli:HydraCLIApp.main",
-            "hy-test = hydra.test:Test.main",
+            "hycli = hydra.app.cli:HydraCLIApp.main",
+            "hytest = hydra.test:Test.main",
             "peerscan = hydra.app.peerscan:PeerScan.main",
             "hytop = hydra.app.top:TopApp.main",
         ]
