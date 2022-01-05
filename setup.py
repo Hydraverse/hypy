@@ -29,7 +29,8 @@ setup(
             "hy = hydra.hy:Hydra.main",
             "hy-cli = hydra.app.cli:HydraCLIApp.main",
             "hy-test = hydra.test:Test.main",
-            "peerscan = hydra.app.peerscan:PeerScan.main"
+            "peerscan = hydra.app.peerscan:PeerScan.main",
+            "hytop = hydra.app.top:TopApp.main",
         ]
     )
 )
