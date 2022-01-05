@@ -43,13 +43,16 @@ class BaseRPC:
                 ]
             return lst
 
-        def __init__(self, json: dict):
+        def __init__(self, json: dict = None):
+            if json is None:
+                json = {}
 
-            for key, value in json.items():
-                if isinstance(value, dict):
-                    json[key] = BaseRPC.Result(value)
-                elif isinstance(value, list):
-                    json[key] = BaseRPC.Result.__conv_list(value)
+            else:
+                for key, value in json.items():
+                    if isinstance(value, dict):
+                        json[key] = BaseRPC.Result(value)
+                    elif isinstance(value, list):
+                        json[key] = BaseRPC.Result.__conv_list(value)
 
             super(BaseRPC.Result, self).__init__(json)
 
@@ -70,9 +73,28 @@ class BaseRPC:
 
         def __serialize__(self, name="value"):
             o_v = self.Value
-            return o_v if name is None else dict(
-                (k, getattr(v, "__serialize__", lambda: v)()) for k, v in o_v.items()
-            ) if isinstance(o_v, dict) else {name: o_v}
+
+            stringify = lambda v: (
+                v if isinstance(v, (list, tuple, dict, set, str, int, float))
+                else str(v)
+            )
+
+            return (
+                stringify(o_v) if name is None
+
+                else {
+                    k: getattr(v, "__serialize__", lambda: stringify(v))() for k, v in o_v.items()
+
+                } if isinstance(o_v, dict)
+
+                else [
+                    getattr(v, "__serialize__", lambda: stringify(v))() for v in o_v
+                    # Deeper nested lists will not be serialized
+
+                ] if isinstance(o_v, list)
+
+                else {name: stringify(o_v)}
+            )
 
         def render(self, name: str, spaces=lambda lvl: "  " * lvl, longest: int = None, full: bool = False):
             result = self.Value
