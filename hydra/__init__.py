@@ -3,3 +3,5 @@
 __all__ = (
     "app", "hy", "log", "rpc", "test", "util"
 )
+
+VERSION = "2.0.5"

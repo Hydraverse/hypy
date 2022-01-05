@@ -6,7 +6,6 @@ import os
 import argparse
 import argcomplete
 
-from hydra.rpc import HydraRPC
 from hydra.app import HydraApp
 from hydra import log
 
