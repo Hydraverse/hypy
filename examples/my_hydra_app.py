@@ -24,14 +24,7 @@ class MyHydraApp(HydraApp):
 
         info = self.rpc.getinfo()
 
-        if self.args.json:
-            print(json.dumps(
-                info.__serialize__(name="getinfo"),
-                indent=2 if self.args.json_pretty else None
-            ))
-
-        else:
-            print("\n".join(info.render(name="getinfo")))
+        self.render(result=info, name="getinfo")
 
 
 @Test.register()

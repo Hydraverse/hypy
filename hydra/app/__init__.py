@@ -93,6 +93,26 @@ class HydraApp:
     def __setstate__(self, state):
         self.hy, self.args, self.log = state
 
+    def render(self, result: HydraRPC.Result, name: str, print_fn=print):
+        """Render a HydraRPC.Result dict.
+        """
+        if self.args.json or self.args.json_pretty:
+            print_fn(json.dumps(
+                result.__serialize__(name=self.args.call),
+                indent=2 if self.args.json_pretty else None
+            ))
+
+        else:
+            spaces = (lambda lvl: "  " * lvl) if not self.args.full else lambda lvl: ""
+
+            if self.args.unbuffered:
+                for line in result.render(name=name, spaces=spaces, full=self.args.full):
+                    print_fn(line)
+            else:
+                print_fn("\n".join(
+                    result.render(name=name, spaces=spaces, full=self.args.full)
+                ))
+
     # @property
     # def info(self) -> MethodInfo:
     #     for info in __INFO__.values():
@@ -116,7 +136,31 @@ class HydraApp:
     def parser(parser: argparse.ArgumentParser):
         """Add method parameters to the argument parser.
         """
-        pass
+        HydraRPC.__parser__(parser)
+
+        parser.add_argument(
+            "-J", "--json-pretty", action="store_true", help="output parseable json",
+            default=False,
+            required=False
+        )
+
+        parser.add_argument(
+            "-j", "--json", action="store_true", help="output parseable json",
+            default=False,
+            required=False
+        )
+
+        parser.add_argument(
+            "-f", "--full", action="store_true", help="output full names (non-json only)",
+            default=False,
+            required=False
+        )
+
+        parser.add_argument(
+            "-u", "--unbuffered", action="store_true", help="render output per-line (non-json only)",
+            default=False,
+            required=False
+        )
 
     @staticmethod
     def __new_entry(cls, name, desc="", aliases=None, version=None):

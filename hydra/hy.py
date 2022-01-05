@@ -128,7 +128,7 @@ class Hydra:
 
         log.log_parser(parser)
 
-        HydraRPC.__parser__(parser)
+        HydraApp.parser(parser)
 
     @staticmethod
     def __parser_global():

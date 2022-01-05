@@ -94,18 +94,6 @@ class HydraRPC(BaseRPC):
                             type=HydraRPC.__parse_param__,
                             help="wallet name (env: HY_RPC_WALLET)", required=False)
 
-        parser.add_argument(
-            "-J", "--json-pretty", action="store_true", help="output parseable json",
-            default=False,
-            required=False
-        )
-
-        parser.add_argument(
-            "-j", "--json", action="store_true", help="output parseable json",
-            default=False,
-            required=False
-        )
-
     @staticmethod
     def __from_parsed__(args: argparse.Namespace):
         return HydraRPC(url=HydraRPC.__parse_url__(args.rpc, args.wallet))
