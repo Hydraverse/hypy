@@ -24,6 +24,7 @@ class TopApp(HydraApp):
         parser.add_argument("-c", "--count", type=int, default=None, help="exit after (count) iterations.")
         parser.add_argument("-z", "--timezone", type=str, default="America/Los_Angeles", help="time zone.")
         parser.add_argument("-C", "--curses", action="store_true", help="use curses display.")
+        parser.add_argument("-x", "--extended", action="store_true", help="show extended info.")
 
     def setup(self):
         super().setup()
@@ -39,14 +40,22 @@ class TopApp(HydraApp):
         print(self.rpc.getestimatedannualroi())
         print()
 
-        self.render(self.rpc.getstakinginfo(), name="getstakinginfo", print_fn=print)
+        stakinginfo = self.rpc.getstakinginfo()
+
+        stakinginfo["search-interval"] = timedelta(seconds=stakinginfo["search-interval"])
+        stakinginfo.expectedtime = timedelta(seconds=stakinginfo.expectedtime)
+        stakinginfo.weight /= 10**8
+        stakinginfo.netstakeweight /= 10**8
+
+        self.render(stakinginfo, name="getstakinginfo", print_fn=print)
         print()
 
         self.render(self.rpc.getwalletinfo(), name="getwalletinfo", print_fn=print)
         print()
 
-        self.render(self.rpc.getmininginfo(), name="getmininginfo", print_fn=print)
-        print()
+        if self.args.extended:
+            self.render(self.rpc.getmininginfo(), name="getmininginfo", print_fn=print)
+            print()
 
     def display_curses(self):
         self.scr.clear()
@@ -70,12 +79,12 @@ class TopApp(HydraApp):
             while True:
                 display()
 
-                time.sleep(interval)
-
                 if count is not None:
                     count -= 1
                     if count <= 0:
                         break
+
+                time.sleep(interval)
 
         finally:
             if self.args.curses:
