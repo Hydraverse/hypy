@@ -27,7 +27,7 @@ class ATraceApp(HydraApp):
 
     def run(self):
         address = self.args.address
-        blocktime = 2**32
+        block_time = 2**32
         amount = 0
         vins = set()
 
@@ -43,13 +43,21 @@ class ATraceApp(HydraApp):
         self.log.info(f"{address}: scanning {len(txns)} transactions")
 
         for txn in txns:
-            if txn.amount > 0 and txn.blocktime <= blocktime:
+            blocktime = txn.get("blocktime", ...)
+
+            if blocktime is ...:
+                self.log.warning(f"{address}: tx {txn.txid} blocktime == 0")
+                blocktime = 0
+
+            if txn.amount > 0 and blocktime <= block_time:
                 (addr_vin, addr_vout) = TxVIOApp.get_vinout_addresses(self.rpc, txn.txid, txn.blockhash)
 
                 if address in addr_vout and address not in addr_vin:
                     if len(addr_vin):
-                        self.log.info(f"{address}: tx {datetime.fromtimestamp(txn.blocktime)} vins={addr_vin}")
-                        blocktime = txn.blocktime
+
+                        self.log.info(f"{address}: tx {datetime.fromtimestamp(blocktime)} vins={addr_vin}")
+
+                        block_time = blocktime
                         vins = addr_vin
                         amount = txn.amount
                     else:
@@ -62,15 +70,18 @@ class ATraceApp(HydraApp):
                         for vout in filter(lambda vout_: not hasattr(vout_.scriptPubKey, "addresses"), txd.vout):
                             # NOTE: Only works for testnet faucet OP_CALL,
                             #       mainnet asm[-2] == OP_RETURN (Coinbase input)
+
                             asm = vout.scriptPubKey.asm.split()
+
                             self.log.info(
-                                f"{address}: tx {datetime.fromtimestamp(txn.blocktime)} op={asm[-1]} addr={asm[-2]}"
+                                f"{address}: tx {datetime.fromtimestamp(blocktime)} op={asm[-1]} addr={asm[-2]}"
                             )
-                            blocktime = txn.blocktime
+
+                            block_time = blocktime
                             vins = {asm[-2]}
                             amount = txn.amount
 
-        print(f"{address}: {','.join(vins)} {datetime.fromtimestamp(blocktime)} {amount}")
+        print(f"{address}: {','.join(vins)} {datetime.fromtimestamp(block_time)} {amount}")
 
 
 @Test.register()
