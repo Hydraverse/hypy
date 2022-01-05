@@ -51,7 +51,6 @@ class TxListApp(HydraApp):
                     addrs_vin, addrs_vout = TxVIOApp.get_vinout_addresses(self.rpc, txid, block_hash)
                     TxVIOApp.print_addresses(addrs_vin, addrs_vout, 12)
 
-
     @staticmethod
     def get_block_range_tx(rpc: HydraRPC, height_from: int, height_to: int) -> dict:
         block_tx = {}
@@ -87,7 +86,7 @@ class TxListAppTest(Test):
     def test_1_lstx_run(self):
         """Test running the app.
         """
-        self.assertHydraAppIsRunnable(TxListApp, "-a", "133497")
+        self.assertHydraAppIsRunnable(TxListApp, "-w ''", "-a", "1337")
 
 
 if __name__ == "__main__":

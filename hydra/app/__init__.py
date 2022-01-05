@@ -9,7 +9,7 @@ from hydra.rpc import HydraRPC
 from hydra.util.struct import dictuple, namedtuple
 
 
-APPS = "rpc", "test", "ascan", "atrace", "lstx", "txvio", "peerscan"
+APPS = "cli", "test", "ascan", "atrace", "lstx", "txvio", "peerscan"
 
 __all__ = "HydraApp", "APPS"
 
@@ -23,6 +23,8 @@ MethodInfo = namedtuple("Info", ("name", "desc", "cls", "aliases", "version"))
 class HydraApp:
     """Base class for all Hydra applications.
     """
+    APPS = APPS
+
     hy = None
     args = None
     log = None

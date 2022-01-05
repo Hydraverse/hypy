@@ -1,2 +1,2 @@
 
-__all__ = "cli", "rpc"
+__all__ = "cli",

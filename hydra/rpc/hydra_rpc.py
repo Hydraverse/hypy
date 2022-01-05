@@ -68,6 +68,14 @@ class HydraRPC(BaseRPC):
 
     @staticmethod
     def __parse_param__(param: str):
+        param = param.strip()
+
+        if not len(param):
+            return param
+
+        if (param.startswith("'") and param.endswith("'")) or (param.startswith('"') and param.endswith('"')):
+            return param[1:-1]
+
         try:
             return json.loads(param)
         except json.decoder.JSONDecodeError:
@@ -82,18 +90,17 @@ class HydraRPC(BaseRPC):
         parser.add_argument("-r", "--rpc", default=os.environ.get("HY_RPC", HydraRPC.__url), type=str,
                             help="rpc url (env: HY_RPC)", required=False)
 
-        parser.add_argument("-w", "--wallet", default=os.environ.get("HY_RPC_WALLET", None), type=str,
+        parser.add_argument("-w", "--wallet", default=os.environ.get("HY_RPC_WALLET", None),
+                            type=HydraRPC.__parse_param__,
                             help="wallet name (env: HY_RPC_WALLET)", required=False)
 
-        group = parser.add_mutually_exclusive_group(required=False)
-
-        group.add_argument(
+        parser.add_argument(
             "-J", "--json-pretty", action="store_true", help="output parseable json",
             default=False,
             required=False
         )
 
-        group.add_argument(
+        parser.add_argument(
             "-j", "--json", action="store_true", help="output parseable json",
             default=False,
             required=False

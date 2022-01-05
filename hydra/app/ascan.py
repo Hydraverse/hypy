@@ -104,7 +104,7 @@ class AScanAppTest(Test):
     def test_1_ascan_run(self):
         """Test running the app.
         """
-        self.assertHydraAppIsRunnable(AScanApp, "TwdkoPNUDk9n4zW7qPx4v7bMNvCiHgSXzD")
+        self.assertHydraAppIsRunnable(AScanApp, "-w watch", "HVknEFy1R2mfuegku1S7bMwpHLjoqVGJxF")
 
 
 if __name__ == "__main__":

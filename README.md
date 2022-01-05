@@ -207,17 +207,26 @@ You can also specify different parameters for the tests with environment variabl
 These variables also work with `hy`.
 
 ```test
-(.env.test) halo@blade:hypy ֍ HYPY_LOG=ERROR ./hy test -
-================================================ test session starts ================================================
-platform linux -- Python 3.8.10, pytest-6.2.5, py-1.11.0, pluggy-1.0.0 -- /home/halo/pr/hy/hypy/.env.test/bin/python3
+(.env) halo@blade:hypy ֍ ./hy test -
+======================================= test session starts ========================================
+platform linux -- Python 3.8.10, pytest-6.2.5, py-1.11.0, pluggy-1.0.0 -- /home/halo/pr/hy/hypy/.env/bin/python3
 rootdir: /home/halo/pr/hy/hypy
-collected 3 items                                                                                                   
+collected 12 items                                                                                 
 
-hydra/test/app/cli.py::HydraCLIAppTest::test_app_cli_runnable PASSED                                          [ 33%]
-hydra/test/app/rpc.py::HydraRPCAppTest::test_app_rpc_runnable PASSED                                          [ 66%]
-hydra/test/rpc.py::HydraRPCTest::test_rpc_stub PASSED                                                         [100%]
+hydra/test/app/cli.py::HydraCLIAppTest::test_app_cli_runnable PASSED                         [  8%]
+hydra/test/rpc.py::HydraRPCTest::test_rpc_stub PASSED                                        [ 16%]
+hydra/app/txvio.py::TxVIOAppTest::test_0_txvio_runnable PASSED                               [ 25%]
+hydra/app/txvio.py::TxVIOAppTest::test_1_txvio_run PASSED                                    [ 33%]
+hydra/app/ascan.py::AScanAppTest::test_0_ascan_runnable PASSED                               [ 41%]
+hydra/app/ascan.py::AScanAppTest::test_1_ascan_run PASSED                                    [ 50%]
+hydra/app/atrace.py::ATraceAppTest::test_0_atrace_runnable PASSED                            [ 58%]
+hydra/app/atrace.py::ATraceAppTest::test_1_atrace_run PASSED                                 [ 66%]
+hydra/app/lstx.py::TxListAppTest::test_0_lstx_runnable PASSED                                [ 75%]
+hydra/app/lstx.py::TxListAppTest::test_1_lstx_run PASSED                                     [ 83%]
+hydra/app/peerscan.py::PeerScanTest::test_0_peerscan_runnable PASSED                         [ 91%]
+hydra/app/peerscan.py::PeerScanTest::test_1_peerscan_run PASSED                              [100%]
 
-================================================= 3 passed in 0.01s =================================================
+======================================= 12 passed in 44.96s ========================================
 ```
 
 ### Standalone Testing
@@ -226,22 +235,36 @@ When developing ouside the library, tests can be run for standalone Application 
 
 `hy-test examples/my_hydra_app.py`
 
-<!--
-See `examples/aapp.py` to learn how to run `hy` commands directly as tests.
--->
 
-<!--
 # Full Usage: `hy`
+
+**NOTE:** Tab-completion is available with `argcomplete` but per-app parameters
+won't be shown, only the primary `hy` parameters.
 
 ### `hy`
 
 ```text
 λ ./hy -h
 
-usage: hy [-h] METH ...
+usage: hy [-h] [-v] [-l LOG] [-r RPC] [-w WALLET] [-J] [-j]
+          {cli,test,ascan,atrace,lstx,txvio,peerscan} ...
 
-Hydra Chain Tool.
+HyPy Library Application Tool.
 
+positional arguments:
+  {cli,test,ascan,atrace,lstx,txvio,peerscan}
+                        application to run.
+  ARGS                  application args.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         verbose level (up to 3x) (env: HYPY_V).
+  -l LOG, --log LOG     log level (name: error,warning,info,debug,notset) (env: HYPY_LOG).
+  -r RPC, --rpc RPC     rpc url (env: HY_RPC)
+  -w WALLET, --wallet WALLET
+                        wallet name (env: HY_RPC_WALLET)
+  -J, --json-pretty     output parseable json
+  -j, --json            output parseable json
 ```
 
 ### `cli`
@@ -249,11 +272,24 @@ Hydra Chain Tool.
 ```text
 λ ./hy cli -h
 
-usage: hy cli ...
+usage: hy cli [-h] [-V] [-v] [-l LOG] [-r RPC] [-w WALLET] [-J] [-j] [-f] CALL [PARAM [PARAM ...]]
+
+optional arguments:
+  ...
+
+cli:
+  rpc cli interface
+
+  -f, --full            output full names (non-json only)
+  CALL                  rpc function to call
+  PARAM                 rpc function parameters
+
 ```
 
 Only the last section in an app's help message (`cli` in the above case) will differ
 between apps.
+
+<!--
 
 ### Apps with Parameters
 

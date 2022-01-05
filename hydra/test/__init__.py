@@ -52,11 +52,16 @@ class Test(unittest.TestCase):
         return cls.main()
 
     @staticmethod
-    def main(*argv):
+    def main(argv=None):
         """Run tests.
 
         Use -k <pattern> or <pattern> ... to specify test names.
         """
+        if argv is None:
+            argv = ()
+
+        argv = tuple(argv)
+
         Test.__testing = True
 
         files = []

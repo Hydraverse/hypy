@@ -12,7 +12,7 @@ with pathlib.Path('requirements.txt').open() as requirements_txt:
 
 setup(
     name="hypy",
-    version="1.4.0",
+    version="2.0.1",
     description=hydra.__doc__,
     author="Halospace Foundation",
     author_email="contact@halospace.org",
@@ -27,7 +27,7 @@ setup(
     entry_points=dict(
         console_scripts=[
             "hy = hydra.hy:Hydra.main",
-            "hy-cli = hydra.app.cli:HydraRPCApp.main",
+            "hy-cli = hydra.app.cli:HydraCLIApp.main",
             "hy-test = hydra.test:Test.main",
             "peerscan = hydra.app.peerscan:PeerScan.main"
         ]

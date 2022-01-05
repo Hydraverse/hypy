@@ -74,8 +74,8 @@ class BaseRPC:
                 (k, getattr(v, "__serialize__", lambda: v)()) for k, v in o_v.items()
             ) if isinstance(o_v, dict) else {name: o_v}
 
-        @staticmethod
-        def render(name: str, result, spaces=lambda lvl: "  " * lvl, longest=None, full=False):
+        def render(self, name: str, spaces=lambda lvl: "  " * lvl, longest: int = None, full: bool = False):
+            result = self.Value
 
             if not isinstance(result, (list, dict)):
                 yield str(result)
@@ -114,6 +114,9 @@ class BaseRPC:
     def __init__(self, url: str):
         self.__url = url
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(url=\"{self.__url}\")"
+
     @property
     def url(self):
         return self.__url
@@ -133,7 +136,7 @@ class BaseRPC:
 
         request = BaseRPC.__build_request_dict(name, *args)
 
-        log.debug(f"POST: {request}")
+        log.debug(f"call [{self.__url}] {name} request={request}")
 
         rsp: Response = self.__session.post(
             url=self.__url,

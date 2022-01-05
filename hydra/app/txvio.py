@@ -99,13 +99,13 @@ class TxVIOAppTest(Test):
         """
         self.assertHydraAppIsRunnable(
             TxVIOApp,
-            "9c7767320e82f7386e5768c765f9cb87d078384e030954214cca210a0cfad076",
-            "933e0993454ac7b6c6083f06ab148ffdfb85d870528b43421b6ac63d4e2ba2ba"
+            "789d1aff68ff3eee189fbaa8119dbd024c5914b0a45904a08620b354b465cfaf",
+            "cd9bd7b8914a4acaef7cfec1f93584845ff96f315f3edd48d41c9a4abb65f6cb"
         )
 
         self.assertHydraAppIsRunnable(
             TxVIOApp,
-            "6ecc00fa5285f8523ecf9b20ddaba1f127615a8fdd7ee68416d9aefb8731db66"
+            "51182d9b97f6a9aabda5e5160719a6173e60b6a83e7650bfe54bc1361cac64e7"
         )
 
 

@@ -53,9 +53,9 @@ class Hydra:
         else:
             sys.argv[0] = "hy"
 
-        app = Hydra.global_app()
+        app, basename, app_has_arg = Hydra.__global_app()
 
-        parser = Hydra.parser(app)
+        parser = Hydra.__parser(app, basename, app_has_arg)
         argcomplete.autocomplete(parser)
         args = parser.parse_args()
 
@@ -83,11 +83,20 @@ class Hydra:
             sys.exit(-1)
 
     @staticmethod
-    def parser(app):
+    def __parser(app, basename, app_has_arg):
         parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description=__doc__)
 
+        def raise_if_no_match(a):
+            if app and a != basename:
+                raise argparse.ArgumentTypeError(f"{a} != {basename}")
+            return a
+
         if app:
-            Hydra.__parser_base(app, parser)
+            if app_has_arg:
+                parser.add_argument("app", type=raise_if_no_match, metavar=basename,
+                                    help=app.desc, choices=HydraApp.APPS)
+
+            Hydra.__parser_base(parser, app)
 
             app_pg = parser.add_argument_group(title=app.name, description=app.desc)
 
@@ -97,15 +106,13 @@ class Hydra:
             parser.add_argument('-V', '--version', action='version', version='%(prog)s 1.0')
 
             subparsers = parser.add_subparsers(
-                dest="app", title="applications", help="application to run", metavar="APP"
+                dest="app", title="applications", help="application to run", metavar="APP", required=True
             )
-
-            subparsers.required = True  # TODO: Move to keyword arg for Python 3.7
 
             for app in HydraApp.all():
                 app_p = subparsers.add_parser(app.name, aliases=app.aliases, help=app.desc)
 
-                Hydra.__parser_base(app, app_p)
+                Hydra.__parser_base(app_p, app)
 
                 app_pg = app_p.add_argument_group(title=app.name, description=app.desc)
 
@@ -114,13 +121,43 @@ class Hydra:
         return parser
 
     @staticmethod
-    def __parser_base(app, parser):
-        if app.version:
+    def __parser_base(parser, app=None):
+
+        if app is not None and app.version:
             parser.add_argument(f'-V', f'--version', action='version', version=f'hy-{app.name} {app.version}')
 
         log.log_parser(parser)
 
         HydraRPC.__parser__(parser)
+
+    @staticmethod
+    def __parser_global():
+        parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description=__doc__)
+        parser.add_argument("app", help="application to run.", choices=HydraApp.APPS)
+        Hydra.__parser_base(parser)
+        parser.add_argument("args", default=[], nargs=argparse.REMAINDER,
+                            metavar="ARGS", help="application args.")
+
+        return parser
+
+    @staticmethod
+    def __global_app():
+        base = os.path.basename(sys.argv[0])
+
+        if base.startswith("hy-"):
+            name = sys.argv[0].split("-", 1)[1]
+            return HydraApp.get(name), name, False
+
+        if base != "hy":
+            name = os.path.splitext(base)[0]
+            return HydraApp.get(name), name, False
+
+        # Load a parser and run it to determine app.
+        parser = Hydra.__parser_global()
+        argcomplete.autocomplete(parser)
+        args = parser.parse_args()
+
+        return HydraApp.get(args.app), args.app, True
 
     @staticmethod
     def slice_type(slce):
@@ -151,21 +188,6 @@ class Hydra:
             default=None,
             **kwds
         )
-
-    @staticmethod
-    def global_app():
-        base = os.path.basename(sys.argv[0])
-
-        if base.startswith("hy-"):
-            return HydraApp.get(sys.argv[0].split("-", 1)[1])
-
-        if base != "hy":
-            return HydraApp.get(os.path.splitext(base)[0])
-
-        for idx, arg in enumerate(sys.argv):
-            if idx > 0 and not arg.startswith("-"):
-                sys.argv[idx:idx+1] = []
-                return HydraApp.get(arg)
 
     @staticmethod
     def arg_env_or_req(key):

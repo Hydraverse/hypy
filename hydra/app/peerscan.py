@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
+from argparse import ArgumentParser
+
 from hydra.app import HydraApp
 from hydra.rpc import HydraRPC
+from hydra.test import Test
 
 import re
 
 
 @HydraApp.register(name="peerscan", desc="Connect to new nodes", version="1.1")
 class PeerScan(HydraApp):
+
+    @staticmethod
+    def parser(parser: ArgumentParser):
+        parser.add_argument("-c", "--count", type=int, default=10000, help="number of addresses to try")
 
     def run(self):
         self.log.info(f"server reports {self.rpc.getconnectioncount()} connections")
@@ -27,7 +34,7 @@ class PeerScan(HydraApp):
 
         self.log.info(f"loaded {len(peers)} peers")
 
-        nodes = self.rpc.getnodeaddresses(10000)
+        nodes = self.rpc.getnodeaddresses(self.args.count)
 
         self.log.info(f"loaded {len(nodes)} nodes")
 
@@ -50,6 +57,20 @@ class PeerScan(HydraApp):
                 self.log.warn(f"addnode failed for {addr}: response={err.response} result={err.error}")
 
         self.log.info(f"server now reports {self.rpc.getconnectioncount()} connections")
+
+
+@Test.register()
+class PeerScanTest(Test):
+
+    def test_0_peerscan_runnable(self):
+        """Test running the app.
+        """
+        self.assertHydraAppIsRunnable(PeerScan, "-h")
+
+    def test_1_peerscan_run(self):
+        """Test running the app.
+        """
+        self.assertHydraAppIsRunnable(PeerScan, "-c 1")
 
 
 if __name__ == "__main__":
