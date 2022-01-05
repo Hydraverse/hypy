@@ -10,6 +10,12 @@ class HydraCLIApp(HydraApp):
 
     @staticmethod
     def parser(parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-u", "--unbuffered", action="store_true", help="render output per-line (non-json only)",
+            default=False,
+            required=False
+        )
+
         parser.add_argument("call", metavar="CALL", help="rpc function to call")
         parser.add_argument("params", nargs="*", type=HydraRPC.__parse_param__,
                             metavar="PARAM", help="rpc function parameters")

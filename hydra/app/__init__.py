@@ -156,12 +156,6 @@ class HydraApp:
             required=False
         )
 
-        parser.add_argument(
-            "-u", "--unbuffered", action="store_true", help="render output per-line (non-json only)",
-            default=False,
-            required=False
-        )
-
     @staticmethod
     def __new_entry(cls, name, desc="", aliases=None, version=None):
         cls.info = MethodInfo(name=name, desc=desc, cls=cls, aliases=aliases or [], version=version)

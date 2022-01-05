@@ -12,7 +12,7 @@ with pathlib.Path('requirements.txt').open() as requirements_txt:
 
 setup(
     name="hypy",
-    version="2.0.2",
+    version="2.0.3",
     description=hydra.__doc__,
     author="Halospace Foundation",
     author_email="contact@halospace.org",
