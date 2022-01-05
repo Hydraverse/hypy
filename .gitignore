@@ -1,5 +1,8 @@
 # local:
 /tmp/
+/build/
+/dist/
+/hypy.egg-info/
 /.env/
 /.env.test/
 .pytest_cache
