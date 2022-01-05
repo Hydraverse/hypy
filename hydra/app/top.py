@@ -92,6 +92,12 @@ class TopApp(HydraApp):
             TopApp.__try_delete(walletinfo, "paytxfee")
             TopApp.__try_delete(walletinfo, "private_keys_enabled")
 
+            if "unconfirmed_balance" in walletinfo and not walletinfo.unconfirmed_balance:
+                del walletinfo.unconfirmed_balance
+
+            if "immature_balance" in walletinfo and not walletinfo.immature_balance:
+                del walletinfo.immature_balance
+
         TopApp.__try_delete(walletinfo, "hdseedid")
 
         if not len(walletinfo.walletname) and not self.args.json:
@@ -103,10 +109,10 @@ class TopApp(HydraApp):
             mininginfo = self.rpc.getmininginfo()
 
             if "errors" in mininginfo and not mininginfo.errors:
-                del mininginfo["errors"]
+                del mininginfo.errors
 
             if "warnings" in mininginfo and not mininginfo.warnings:
-                del mininginfo["warnings"]
+                del mininginfo.warnings
 
             result.mininginfo = mininginfo
 
