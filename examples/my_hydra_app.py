@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
 import argparse
-import json
 
 from hydra.app import HydraApp
 from hydra.test import Test

@@ -3,13 +3,14 @@
 import argparse
 import importlib
 import json
+from collections import namedtuple
+from attrdict import AttrDict
 
 from hydra import log
 from hydra.rpc import HydraRPC
-from hydra.util.struct import dictuple, namedtuple
 
 
-APPS = "cli", "test", "ascan", "atrace", "lstx", "txvio", "peerscan"
+APPS = "cli", "test", "ascan", "atrace", "lstx", "txvio", "peerscan", "top"
 
 __all__ = "HydraApp", "APPS"
 
@@ -61,7 +62,7 @@ class HydraApp:
                 if not dest not in self.args:
                     self.args[dest] = parser._defaults[dest]
 
-        self.args = dictuple("args", self.args)
+        self.args = AttrDict(self.args)
 
         self.rpc = HydraRPC.__from_parsed__(self.args)
 
@@ -105,7 +106,7 @@ class HydraApp:
         else:
             spaces = (lambda lvl: "  " * lvl) if not self.args.full else lambda lvl: ""
 
-            if self.args.unbuffered:
+            if self.args.get("unbuffered", False):
                 for line in result.render(name=name, spaces=spaces, full=self.args.full):
                     print_fn(line)
             else:
