@@ -14,7 +14,7 @@ class HydraRPC(BaseRPC):
     MAINNET_PORT = 3389
     TESTNET_PORT = 13389
 
-    def __init__(self, url: (str, tuple) = __url, wallet: str = None):
+    def __init__(self, url=__url, wallet: str = None):
         self.__mainnet, self.__url = HydraRPC.__parse_url__(url, wallet) if not isinstance(url, tuple) else url
         super().__init__(self.__url)
 
@@ -23,14 +23,16 @@ class HydraRPC(BaseRPC):
         return self.__url
 
     @staticmethod
-    def __parse_url__(url: str, wallet: str = None):
+    def __parse_url__(url: str, wallet: str = None, testnet=False):
         url_split = urlsplit(url)
 
         schemes_hydra = ("mainnet", "main", "testnet", "test")
         schemes_main = ("http", "mainnet", "main")
         schemes = schemes_main + ("testnet", "test")
 
-        if url_split.scheme not in schemes:
+        scheme = url_split.scheme if not testnet else schemes[-1]
+
+        if scheme not in schemes:
             raise ValueError(f"Invalid scheme for url: {url}")
 
         path = url_split.path
@@ -50,13 +52,13 @@ class HydraRPC(BaseRPC):
         port = url_split.port
 
         if port is None:
-            port = HydraRPC.MAINNET_PORT if url_split.scheme in schemes_main else HydraRPC.TESTNET_PORT
+            port = HydraRPC.MAINNET_PORT if scheme in schemes_main else HydraRPC.TESTNET_PORT
             netloc += f":{port}"
             mainnet = port == HydraRPC.MAINNET_PORT
-        elif url_split.scheme not in schemes_hydra:
+        elif scheme not in schemes_hydra:
             raise ValueError("hydra scheme required when specifying port number")
         else:
-            mainnet = url_split.scheme in schemes_main
+            mainnet = scheme in schemes_main
 
         return mainnet, urlunsplit((
             "http",
@@ -87,16 +89,20 @@ class HydraRPC(BaseRPC):
     @staticmethod
     def __parser__(parser: argparse.ArgumentParser):
 
-        parser.add_argument("-r", "--rpc", default=os.environ.get("HY_RPC", HydraRPC.__url), type=str,
+        parser.add_argument("--rpc", default=os.environ.get("HY_RPC", HydraRPC.__url), type=str,
                             help="rpc url (env: HY_RPC)", required=False)
 
-        parser.add_argument("-w", "--wallet", default=os.environ.get("HY_RPC_WALLET", None),
+        parser.add_argument("--rpc-wallet", default=os.environ.get("HY_RPC_WALLET", None),
                             type=HydraRPC.__parse_param__,
-                            help="wallet name (env: HY_RPC_WALLET)", required=False)
+                            help="rpc wallet name override (env: HY_RPC_WALLET)", required=False)
+
+        parser.add_argument("--rpc-testnet", default=os.environ.get("HY_RPC_TESTNET", False),
+                            action="store_true",
+                            help="rpc testnet override (env: HY_RPC_WALLET)", required=False)
 
     @staticmethod
     def __from_parsed__(args):
-        return HydraRPC(url=HydraRPC.__parse_url__(args.rpc, args.wallet))
+        return HydraRPC(url=HydraRPC.__parse_url__(args.rpc, args.rpc_wallet, args.rpc_testnet))
 
     @property
     def mainnet(self):
