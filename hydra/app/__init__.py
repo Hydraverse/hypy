@@ -94,12 +94,12 @@ class HydraApp:
     def __setstate__(self, state):
         self.hy, self.args, self.log = state
 
-    def render(self, result: HydraRPC.Result, name: str, print_fn=print):
+    def render(self, result: HydraRPC.Result, name: str, print_fn=print, ljust=None):
         """Render a HydraRPC.Result dict.
         """
         if self.args.json or self.args.json_pretty:
             print_fn(json.dumps(
-                result.__serialize__(name=self.args.call),
+                result.__serialize__(name=name),
                 indent=2 if self.args.json_pretty else None
             ))
 
@@ -107,11 +107,11 @@ class HydraApp:
             spaces = (lambda lvl: "  " * lvl) if not self.args.full else lambda lvl: ""
 
             if self.args.get("unbuffered", False):
-                for line in result.render(name=name, spaces=spaces, full=self.args.full):
+                for line in result.render(name=name, spaces=spaces, full=self.args.full, longest=ljust):
                     print_fn(line)
             else:
                 print_fn("\n".join(
-                    result.render(name=name, spaces=spaces, full=self.args.full)
+                    result.render(name=name, spaces=spaces, full=self.args.full, longest=ljust)
                 ))
 
     # @property
@@ -123,7 +123,8 @@ class HydraApp:
     #     raise ModuleNotFoundError
 
     def setup(self):
-        pass
+        if self.args.json_pretty:
+            self.args.json = True
 
     def run(self, *args, **kwds):
         raise NotImplementedError
