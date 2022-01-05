@@ -5,6 +5,7 @@ import time
 import curses
 
 from hydra.app import HydraApp
+from hydra.rpc.base import BaseRPC
 from hydra.test import Test
 
 
@@ -17,6 +18,7 @@ COLOR_ETC = 10
 @HydraApp.register(name="top", desc="Show status periodically", version="0.1")
 class TopApp(HydraApp):
     scr = None
+    ljust = None
 
     @staticmethod
     def parser(parser: ArgumentParser):
@@ -29,46 +31,10 @@ class TopApp(HydraApp):
     def setup(self):
         super().setup()
 
+        self.ljust = (30 if not self.args.full else 40)
+
         if self.args.curses:
             self._curses_setup()
-
-    # noinspection PyShadowingBuiltins
-    def display(self, print=print):
-        print(datetime.now(tz=pytz.timezone(self.args.timezone)))
-        print(datetime.utcnow())
-        print(self.rpc.getconnectioncount())
-        print(self.rpc.getestimatedannualroi())
-        print()
-
-        stakinginfo = self.rpc.getstakinginfo()
-
-        stakinginfo["search-interval"] = timedelta(seconds=stakinginfo["search-interval"])
-        stakinginfo.expectedtime = timedelta(seconds=stakinginfo.expectedtime)
-        stakinginfo.weight /= 10**8
-        stakinginfo.netstakeweight /= 10**8
-
-        self.render(stakinginfo, name="getstakinginfo", print_fn=print)
-        print()
-
-        self.render(self.rpc.getwalletinfo(), name="getwalletinfo", print_fn=print)
-        print()
-
-        if self.args.extended:
-            self.render(self.rpc.getmininginfo(), name="getmininginfo", print_fn=print)
-            print()
-
-    def display_curses(self):
-        self.scr.clear()
-        self.display(print=self.__print_curses)
-        self.scr.refresh()
-
-    def __print_curses(self, text=""):
-        text = str(text)
-
-        if not text.endswith("\n"):
-            text += "\n"
-
-        return self.scr.addstr(text)
 
     def run(self):
         interval = self.args.interval
@@ -89,6 +55,95 @@ class TopApp(HydraApp):
         finally:
             if self.args.curses:
                 self._curses_cleanup()
+
+    def read(self):
+        result = BaseRPC.Result()
+
+        result.now = datetime.now(tz=pytz.timezone(self.args.timezone))
+        result.utcnow = datetime.utcnow()
+        result.connectioncount = self.rpc.getconnectioncount()
+        result.apr = self.rpc.getestimatedannualroi()
+
+        stakinginfo = self.rpc.getstakinginfo()
+
+        stakinginfo["search-interval"] = timedelta(seconds=stakinginfo["search-interval"])
+        stakinginfo.expectedtime = timedelta(seconds=stakinginfo.expectedtime)
+        stakinginfo.weight /= 10**8
+        stakinginfo.netstakeweight /= 10**8
+
+        if "errors" in stakinginfo and not stakinginfo.errors:
+            del stakinginfo["errors"]
+
+        if not self.args.extended:
+            TopApp.__try_delete(stakinginfo, "pooledtx")
+            
+        result.stakinginfo = stakinginfo
+
+        walletinfo = self.rpc.getwalletinfo()
+
+        if "unlocked_until" in walletinfo:
+            walletinfo.unlocked_until = datetime.fromtimestamp(walletinfo.unlocked_until)
+
+        if not self.args.extended:
+            TopApp.__try_delete(walletinfo, "walletversion")
+            TopApp.__try_delete(walletinfo, "keypoololdest")
+            TopApp.__try_delete(walletinfo, "keypoolsize")
+            TopApp.__try_delete(walletinfo, "keypoolsize_hd_internal")
+            TopApp.__try_delete(walletinfo, "paytxfee")
+            TopApp.__try_delete(walletinfo, "private_keys_enabled")
+
+        TopApp.__try_delete(walletinfo, "hdseedid")
+
+        if not len(walletinfo.walletname) and not self.args.json:
+            walletinfo.walletname = "''"
+            
+        result.walletinfo = walletinfo
+
+        if self.args.extended:
+            mininginfo = self.rpc.getmininginfo()
+
+            if "errors" in mininginfo and not mininginfo.errors:
+                del mininginfo["errors"]
+
+            if "warnings" in mininginfo and not mininginfo.warnings:
+                del mininginfo["warnings"]
+
+            result.mininginfo = mininginfo
+
+        return result
+
+    # noinspection PyShadowingBuiltins
+    def display(self, print=print):
+        result = self.read()
+
+        if not self.args.json:
+            for key, value in result.items():
+                if not isinstance(value, BaseRPC.Result):
+                    print(key.ljust(self.ljust) + str(value))
+                else:
+                    print()
+                    self.render(value, name=key, print_fn=print, ljust=self.ljust)
+
+        else:
+            self.render(result, name="top", print_fn=print, ljust=self.ljust)
+
+    def display_curses(self):
+        self.scr.clear()
+        self.display(print=self.__print_curses)
+        self.scr.refresh()
+
+    def __print_curses(self, text=""):
+        text = str(text)
+
+        if not text.endswith("\n"):
+            text += "\n"
+
+        return self.scr.addstr(text)
+
+    @staticmethod
+    def __try_delete(dic: dict, key: str):
+        if key in dic:
+            del dic[key]
 
     # noinspection PyMethodMayBeStatic
     def _curses_cleanup(self):
@@ -136,3 +191,4 @@ class TopAppTest(Test):
 
 if __name__ == "__main__":
     TopApp.main()
+
