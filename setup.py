@@ -11,13 +11,14 @@ import hydra
 assert sys.version_info[0] == 3 and sys.version_info[1] >= 8, "rpc_proxy requires Python 3.8 or newer"
 
 setup(
-    name="hypy",
+    name="halo-hypy",
     url="https://github.com/hydraverse/hypy",
     author="Halospace Foundation",
     author_email="contact@halospace.org",
     version=hydra.VERSION,
-    description=hydra.__doc__,
+    description=" // ".join(hydra.__doc__.splitlines()),
     long_description=open(os.path.join(os.path.dirname(__file__), "README.md")).read(),
+    long_description_content_type="text/markdown",
     packages=find_packages(),
     package_data={
         "hydra": [
@@ -39,4 +40,5 @@ setup(
             "peerscan = hydra.app.peerscan:PeerScan.main",
             "hytop = hydra.app.top:TopApp.main",
         ]
-    })
+    },
+)

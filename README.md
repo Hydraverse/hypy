@@ -1,4 +1,4 @@
-# Hydra Chain Integration & Tools Library [PREVIEW]
+# Hydra Chain Integration & Tools Library
 
 This is a Python support library for the Hydra Chain project (https://hydrachain.org) aimed at simplifying the process of using and developing apps for the blockchain.
 
@@ -6,12 +6,13 @@ Primarily, `hypy` (pronounced "hippie") currently provides:
 - RPC tools to access the Hydra JSON-RPC service.
 - A flexible command line tool with simple integration.
 - Application infrastructure to extend apps & tools.
+- Integrated apps for common tasks such as monitoring or connecting to new nodes.
 
 # Quick Start
 
 If you know what this is and just want to get going, install:
 
-`$ pip install git+https://github.com/hydraverse/hypy`
+`$ pip install halo-hypy`
 
 And then run!
 
@@ -19,46 +20,107 @@ And then run!
 
 Full download/install and usage instructions follow.
 
+# Usage
+
+This library connects to a Hydra node on a local system or over a network.
+
+The primary tool to interface with the node is called `hycli`, and for the most part behaves exactly the same as `hydra-cli`,
+with some nicer output options:
+
+```shell
+halo@blade:~ ֍ hycli getinfo
+getinfo                
+  .version             180506
+  .protocolversion     70017
+  .walletversion       169900
+  .balance             28047.31917165
+  .stake               1452.99760027
+  .locked              
+    .used              128
+    .free              65408
+    .total             65536
+    .locked            65536
+    .chunks_used       2
+    .chunks_free       2
+  .blocks              155763
+  .timeoffset          0
+  .connections         8
+  .proxy               
+  .difficulty          
+    .proof-of-work     1.52587890625e-05
+    .proof-of-stake    797825.1819042678
+  .testnet             True
+  .moneysupply         20931869.76468454
+  .burnedcoins         73748.17511400
+  .keypoololdest       1635530802
+  .keypoolsize         2000
+  .unlocked_until      1741407462
+  .relayfee            0.004
+  .errors 
+```
+
+There's also `hytop`, which periodically displays useful node status info in a human-readable format:
+
+```commandline
+halo@blade:~ ֍ hytop -C
+
+now                           2022-01-05 16:21:36.930567-08:00
+utcnow                        2022-01-06 00:21:36.930584
+connectioncount               8
+apr                           107.2079665372164
+
+stakinginfo
+  .enabled                    True
+  .staking                    True
+  .difficulty                 797825.1819042678
+  .search-interval            1:51:28
+  .weight                     28047.31917165
+  .netstakeweight             3918664.173517
+  .expectedtime               4:58:03
+
+walletinfo
+  .walletname                 ''
+  .balance                    28047.31917165
+  .stake                      1452.99760027
+  .txcount                    2769
+  .unlocked_until             2025-03-07 20:17:42
+```
+
+And `peerscan`, which attempts to connect to new nodes:
+
+```commandline
+halo@blade:~ ֍ peerscan -vv
+
+INFO:hypy:server reports 327 connections
+INFO:hypy:loaded 327 peers
+INFO:hypy:loaded 1201 nodes
+INFO:hypy:trying 883 potential new peers
+INFO:hypy:server now reports 329 connections
+```
+
 # Clone & Install
 
 This is both a library that you can import into your Python code and a command line tool that you can use and extend.
 
 When installing `hypy`, the command line tools become available as well.
 
-To install without cloning the repository,  jump down to the [Remote Installation](#Remote-Installation) section.
-
-Starting with v0.1-final, a pip-installable `.whl` will be available as a release for each `release` tag. 
-
-### **(Note: 'λ' is the command shell prompt in all following command examples)**
+To install the latest from git without cloning the repository,  jump down to the [Remote Installation](#Remote-Installation) section.
 
 ### Clone/Download Sources:
 
-```text
-λ git clone https://github.com/hydraverse/hypyhttps://explorer.hydrachain.org/misc/biggest-miners
+```commandline
+֍ git clone https://github.com/hydraverse/hypy
 
 Cloning into 'hypy'...
 ...
 ```
-
-Cloning via ssh is possible as well, removing the need to repeatedly enter credentials.
-
-Add your SSH public key to GitHub and make sure to have the following contents in `~/.ssh/config`:
-
-```text
-Host github.com
-        User git
-```
-
-You can then clone this or any other repo easily:
-
-`λ git clone ssh://github.com/hydraverse/hypy`
 
 ### Environment
 
 The simplest way to use `hypy` is to install it at the system level, but sometimes it can be hard to manage varying Python
 version needs and dependencies.
 
-If installing at the system level, jump down to the [Install Prerequisites](#Install-Prerequisites) section.
+If installing at the system level, jump down to the [Installation](#Installing) section.
 
 Otherwise, you can choose between `venv`, `Anaconda`, `pipenv` and many others;
 however, `venv` is considered to be the supported environment for this library.
@@ -68,110 +130,73 @@ however, `venv` is considered to be the supported environment for this library.
 In case you'd like to use/install `hypy` within a virtual environment, run
 the following within the library's top folder:
 
-```text
-λ mkdir .env
-λ python3 -m venv .env/hypy
+```commandline
+֍ mkdir .env
+֍ python3 -m venv .env/hypy
 ...
-λ source .env/hypy/bin/activate
-(hypy) λ which python
+֍ source .env/hypy/bin/activate
+(hypy) ֍ which python
 /home/halo/.env/hypy/bin/python
-(hypy) λ pip install --upgrade pip  # Ensure that pip is the newest version.
+(hypy) ֍ pip install --upgrade pip  # Ensure that pip is the newest version.
 ...
 ```
-<!-- TODO: Add example output from `which python` etc -->
 
-Requires the Debian/Ubuntu packages `python3-distutils` and `python3-venv`.
+Requires the Debian/Ubuntu package `python3-venv`.
 
 #### Anaconda
 
 [Installing Conda on Linux](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html#install-linux-silent)
 summary:
 
-```text
+```commandline
 
-λ wget https://repo.anaconda.com/archive/Anaconda3-2021.05-Linux-x86_64.sh
+֍ wget https://repo.anaconda.com/archive/Anaconda3-2021.05-Linux-x86_64.sh
 
-λ chmod +x Anaconda*.sh
+֍ chmod +x Anaconda*.sh
 
-λ ./Anaconda*.sh
+֍ ./Anaconda*.sh
 ```
 
 ##### Create & Activate Anaconda Environment:
 
-```text
-λ conda create -n hypy python=3.8.10
+```commandline
+֍ conda create -n hypy python=3.8.10
 
-λ conda activate hypy
-```
-<!-- TODO: Add example output from `which python` etc -->
-
-## Install Prerequisites:  
-
-First, check your python and pip versions: both should be 3.8+.
-
-```text
-(hypy) λ pip --version; python --version
-
-pip 20.0.2 from /home/halo/pr/hy/hypy/.env/hypy/lib/python3.8/site-packages/pip (python 3.8)
-Python 3.8.10
+֍ conda activate hypy
 ```
 
-If you get an error that says `Command 'python' not found` (e.g. with default Ubuntu 20.04.3 LTS `python3` installs), it can be fixed by installing the `python-is-python3` package:
-
-`(hypy) λ sudo apt install -y python-is-python3`
-
-### Prerequisites from `requirements.txt`:
-
-`(hypy) λ pip install -r requirements.txt`
-
-**Mac:** Must specify HTTP proxy manually when needed, add the following parameter: `--proxy='https://user:pass@proxy.example.com:911'`
-
-
-At this point, prior to installation you can optionally run the tests to validate your environment:
-
-`(hypy) λ ./hy test -`
-
-More details on unit testing below.
-
-# Install
-
-If you prefer, you can use the main library tool, `hy`, without installing by running `./hy` within
-the library folder. Otherwise, you can install from a cloned copy of this repository or directly from the remote URL.
+# Installing
 
 ### From Source
 
 Installing from the cloned `hypy` library folder:
 
-`λ pip install .`
-
-Use `sudo -H` when installing at the system level, otherwise don't forget to make sure that your environment activated.
+`֍ pip install .`
 
 ### Remote Installation <a name="Remote-Installation"></a>
 
 Installing directly from GitHub:
 
-`λ pip install git+https://github.com/hydraverse/hypy`
+`֍ pip install git+https://github.com/hydraverse/hypy`
 
 Or to get a specific branch, tag, or revision:
 
-`λ pip install git+https://github.com/hydraverse/hypy@v0.2-final`
+`֍ pip install git+https://github.com/hydraverse/hypy@v2.3.1`
 
-This example installs the `v0.2-final` tagged version.
+This example installs the `v2.3.1` tagged version.
 
 ### Uninstall
 
-`λ pip uninstall hypy`
+`֍ pip uninstall hypy`
 
 ### Packaging
 
 You can create a redistributable wheel package for later installation with the following command:
 
-`λ pip wheel .`
-
-The resulting `hypy-N.N-py3-none-any.whl` file can be `pip install`-ed.
-Don't attempt to change the file name, `pip` will complain.
-
-You can also create wheels directly from repository URLs using the same URL format as you would for installation.
+```commandline
+(hypy) ֍ pip install build
+(hypy) ֍ python -m build
+```
 
 # Use: `hy`
 
@@ -180,53 +205,52 @@ You can also create wheels directly from repository URLs using the same URL form
 Some apps are provided by the library, and the `hy` module provides you with a means to
 integrate your own apps and run them as if they were part of the tool. More on that in the example app below.
 
-Running an app on the command line looks something like this **(note: 'λ' is the command shell prompt)**:
+Running an app on the command line looks something like this **(note: '֍' is the command shell prompt)**:
 
-```text
-λ hy [-h] <some-app> [-h] [options] [app params]
+```commandline
+֍ hy [-h] <some-app> [-h] [options] [app params]
 ```
 
 Use the `-h` option *before* the app name to see a list of apps, and after to get usage for a particular app.
 
-The primary apps currently available are `cli`, `rpc`, and `test`. These are provided as system-level
+The primary apps currently available are `cli` and `test`. These are provided as system-level
 commands alongside `hy` when you install `hypy`.
 
-This means that instead of calling `hy cli ...`, for example, you can use `hy-cli ...` instead.
+This means that instead of calling `hy cli ...`, for example, you can use `hycli ...` instead.
 
 Note that all program options (except `-h` or `-v`) must appear *after* the app name.
 
 # Run Unit Tests
 
-In the top level project folder:
+`hy test - [-k "<test_name_pattern> or <test_name_pattern> ..."]`
 
-`./hy test - [-k "<test_name_pattern> or <test_name_pattern> ..."]`
-
-This command is also available globally (with slight variation, no need for `-` param) after installation as `hy-test`.
+This command is also available globally (with slight variation, no need for `-` param) after installation as `hytest`.
 
 You can also specify different parameters for the tests with environment variables, such as `HYPY_LOG`.
 These variables also work with `hy`.
 
-```test
-(.env) halo@blade:hypy ֍ ./hy test -
-======================================= test session starts ========================================
-platform linux -- Python 3.8.10, pytest-6.2.5, py-1.11.0, pluggy-1.0.0 -- /home/halo/pr/hy/hypy/.env/bin/python3
+```commandline
+(hypy) halo@blade:hypy ֍ HY_RPC_WALLET=watch HY_LOG=ERROR hy test -
+=========================== test session starts ============================
+platform linux -- Python 3.8.10, pytest-6.2.5, py-1.11.0, pluggy-1.0.0
 rootdir: /home/halo/pr/hy/hypy
-collected 12 items                                                                                 
+collected 13 items                                                         
 
-hydra/test/app/cli.py::HydraCLIAppTest::test_app_cli_runnable PASSED                         [  8%]
-hydra/test/rpc.py::HydraRPCTest::test_rpc_stub PASSED                                        [ 16%]
-hydra/app/txvio.py::TxVIOAppTest::test_0_txvio_runnable PASSED                               [ 25%]
-hydra/app/txvio.py::TxVIOAppTest::test_1_txvio_run PASSED                                    [ 33%]
-hydra/app/ascan.py::AScanAppTest::test_0_ascan_runnable PASSED                               [ 41%]
-hydra/app/ascan.py::AScanAppTest::test_1_ascan_run PASSED                                    [ 50%]
-hydra/app/atrace.py::ATraceAppTest::test_0_atrace_runnable PASSED                            [ 58%]
-hydra/app/atrace.py::ATraceAppTest::test_1_atrace_run PASSED                                 [ 66%]
-hydra/app/lstx.py::TxListAppTest::test_0_lstx_runnable PASSED                                [ 75%]
-hydra/app/lstx.py::TxListAppTest::test_1_lstx_run PASSED                                     [ 83%]
-hydra/app/peerscan.py::PeerScanTest::test_0_peerscan_runnable PASSED                         [ 91%]
-hydra/app/peerscan.py::PeerScanTest::test_1_peerscan_run PASSED                              [100%]
+hydra/test/app/cli.py::HydraCLIAppTest::test_app_cli_runnable PASSED [  7%]
+hydra/test/rpc.py::HydraRPCTest::test_rpc_stub PASSED                [ 15%]
+hydra/app/txvio.py::TxVIOAppTest::test_0_txvio_runnable PASSED       [ 23%]
+hydra/app/txvio.py::TxVIOAppTest::test_1_txvio_run PASSED            [ 30%]
+hydra/app/ascan.py::AScanAppTest::test_0_ascan_runnable PASSED       [ 38%]
+hydra/app/ascan.py::AScanAppTest::test_1_ascan_run PASSED            [ 46%]
+hydra/app/atrace.py::ATraceAppTest::test_0_atrace_runnable PASSED    [ 53%]
+hydra/app/atrace.py::ATraceAppTest::test_1_atrace_run PASSED         [ 61%]
+hydra/app/lstx.py::TxListAppTest::test_0_lstx_runnable PASSED        [ 69%]
+hydra/app/lstx.py::TxListAppTest::test_1_lstx_run PASSED             [ 76%]
+hydra/app/peerscan.py::PeerScanTest::test_0_peerscan_runnable PASSED [ 84%]
+hydra/app/peerscan.py::PeerScanTest::test_1_peerscan_run PASSED      [ 92%]
+hydra/app/top.py::TopAppTest::test_0_top_runnable PASSED             [100%]
 
-======================================= 12 passed in 44.96s ========================================
+=========================== 13 passed in 37.17s ============================
 ```
 
 ### Standalone Testing
@@ -241,38 +265,44 @@ When developing ouside the library, tests can be run for standalone Application 
 **NOTE:** Tab-completion is available with `argcomplete` but per-app parameters
 won't be shown, only the primary `hy` parameters.
 
+*(Instructions for tab completion coming soon)*
+
 ### `hy`
 
-```text
-λ ./hy -h
+```commandline
+֍ hy -h
 
-usage: hy [-h] [-v] [-l LOG] [-r RPC] [-w WALLET] [-J] [-j]
-          {cli,test,ascan,atrace,lstx,txvio,peerscan} ...
+usage: hy [-h] [-v] [-l LOG] [--rpc RPC] [--rpc-wallet RPC_WALLET]
+          [--rpc-testnet] [-J] [-j] [-f]
+          {cli,test,ascan,atrace,lstx,txvio,peerscan,top} ...
 
 HyPy Library Application Tool.
 
 positional arguments:
-  {cli,test,ascan,atrace,lstx,txvio,peerscan}
+  {cli,test,ascan,atrace,lstx,txvio,peerscan,top}
                         application to run.
   ARGS                  application args.
 
 optional arguments:
   -h, --help            show this help message and exit
   -v, --verbose         verbose level (up to 3x) (env: HYPY_V).
-  -l LOG, --log LOG     log level (name: error,warning,info,debug,notset) (env: HYPY_LOG).
-  -r RPC, --rpc RPC     rpc url (env: HY_RPC)
-  -w WALLET, --wallet WALLET
-                        wallet name (env: HY_RPC_WALLET)
+  -l LOG, --log LOG     log level (name: error,warning,info,debug,notset)
+                        (env: HYPY_LOG).
+  --rpc RPC             rpc url (env: HY_RPC)
+  --rpc-wallet RPC_WALLET
+                        rpc wallet name override (env: HY_RPC_WALLET)
+  --rpc-testnet         rpc testnet override (env: HY_RPC_WALLET)
   -J, --json-pretty     output parseable json
   -j, --json            output parseable json
+  -f, --full            output full names (non-json only)
 ```
 
 ### `cli`
 
-```text
-λ ./hy cli -h
+```commandline
+֍ hycli -h
 
-usage: hy cli [-h] [-V] [-v] [-l LOG] [-r RPC] [-w WALLET] [-J] [-j] [-f] CALL [PARAM [PARAM ...]]
+usage: hy cli ... [-f] ...
 
 optional arguments:
   ...
@@ -283,38 +313,7 @@ cli:
   -f, --full            output full names (non-json only)
   CALL                  rpc function to call
   PARAM                 rpc function parameters
-
 ```
 
 Only the last section in an app's help message (`cli` in the above case) will differ
 between apps.
-
-<!--
-
-### Apps with Parameters
-
-These are snips of the usage block and parameter descriptions for apps containing any
-special parameters.
-
-### `blend`
-
-```text
-λ hy blend -h
-
-usage: hy ...
-
-```
-
-### `echo`
-
-```text
-λ hy echo -h
-
-...
-echo:
-  print text
-
-  --all                 show as much information as possible.
-```
-
--->

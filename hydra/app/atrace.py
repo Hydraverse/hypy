@@ -95,7 +95,7 @@ class ATraceAppTest(Test):
     def test_1_atrace_run(self):
         """Test running the app.
         """
-        self.assertHydraAppIsRunnable(ATraceApp, "-w watch", "HVknEFy1R2mfuegku1S7bMwpHLjoqVGJxF")
+        self.assertHydraAppIsRunnable(ATraceApp, "--rpc-wallet=watch", "HVknEFy1R2mfuegku1S7bMwpHLjoqVGJxF")
 
 
 if __name__ == "__main__":

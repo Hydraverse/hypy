@@ -86,7 +86,7 @@ class TxListAppTest(Test):
     def test_1_lstx_run(self):
         """Test running the app.
         """
-        self.assertHydraAppIsRunnable(TxListApp, "-w ''", "-a", "1337")
+        self.assertHydraAppIsRunnable(TxListApp, "--rpc-wallet=watch", "-a", "1337")
 
 
 if __name__ == "__main__":
