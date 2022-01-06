@@ -102,7 +102,12 @@ class HydraRPC(BaseRPC):
 
     @staticmethod
     def __from_parsed__(args):
-        return HydraRPC(url=HydraRPC.__parse_url__(args.rpc, args.rpc_wallet, args.rpc_testnet))
+        # Override given parameters
+        rpc = os.environ.get("HY_RPC", args.rpc)
+        wallet = os.environ.get("HY_RPC_WALLET", args.rpc_wallet)
+        testnet = os.environ.get("HY_RPC_TESTNET", args.rpc_testnet)
+
+        return HydraRPC(url=HydraRPC.__parse_url__(rpc, wallet, testnet))
 
     @property
     def mainnet(self):
