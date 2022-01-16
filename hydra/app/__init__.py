@@ -10,7 +10,7 @@ from hydra import log
 from hydra.rpc import HydraRPC
 
 
-APPS = "cli", "test", "ascan", "atrace", "lstx", "txvio", "peerscan", "top"
+APPS = "cli", "test", "ascan", "atrace", "call", "lstx", "txvio", "peerscan", "top"
 
 __all__ = "HydraApp", "APPS"
 

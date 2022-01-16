@@ -31,6 +31,7 @@ setup(
         "requests>=2.26.0",
         "attrdict",
         "pytz",
+        "pycryptodome",
     ],
     entry_points={
         "console_scripts": [
