@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import os
+from typing import Optional
+from urllib.parse import urlsplit, urlunsplit
+
 from requests import Response, Session
 from attrdict import AttrDict
 
@@ -71,7 +75,7 @@ class BaseRPC:
                 else error if error is not ... \
                 else self
 
-        def __serialize__(self, name="value"):
+        def __serialize__(self, name: Optional[str] = "value"):
             o_v = self.Value
 
             stringify = lambda v: (
@@ -143,22 +147,41 @@ class BaseRPC:
     def url(self):
         return self.__url
 
-    @staticmethod
-    def __build_request_dict(name: str, *args, id_: int = 1) -> dict:
-        return {
-            "id": id_,
-            "jsonrpc": "2.0",
-            "method": name,
-            "params": list(args)
-        }
+    def get(self, path: str) -> BaseRPC.Result:
+        if self.__session is None:
+            self.__session = Session()
 
-    def call(self, name: str, *args) -> BaseRPC.Result:
+        request_url = self.__build_request_path(path)
+
+        log.debug(f"get [{request_url}]")
+
+        rsp: Response = self.__session.get(
+            url=request_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36",
+                "referer": request_url,
+            }
+        )
+
+        if not rsp.ok:
+            raise BaseRPC.Exception(rsp)
+
+        json = rsp.json()
+
+        if "error" in json and json["error"]:
+            raise BaseRPC.Exception(rsp)
+
+        log.debug(f"result: {json}")
+
+        return BaseRPC.Result(json)
+
+    def post(self, name: str, *args) -> BaseRPC.Result:
         if self.__session is None:
             self.__session = Session()
 
         request = BaseRPC.__build_request_dict(name, *args)
 
-        log.debug(f"call [{self.__url}] {name} request={request}")
+        log.debug(f"post [{self.__url}] {name} request={request}")
 
         rsp: Response = self.__session.post(
             url=self.__url,
@@ -176,3 +199,22 @@ class BaseRPC:
         log.debug(f"result: {json}")
 
         return BaseRPC.Result(json)
+
+    def __build_request_path(self, request_path: str) -> str:
+        scheme, netloc, path, query, fragment = urlsplit(self.url)
+
+        if request_path.startswith("/"):
+            request_path = request_path[1:]
+
+        path = os.path.join(path, request_path)
+
+        return urlunsplit((scheme, netloc, path, query, fragment))
+
+    @staticmethod
+    def __build_request_dict(name: str, *args, id_: int = 1) -> dict:
+        return {
+            "id": id_,
+            "jsonrpc": "2.0",
+            "method": name,
+            "params": list(args)
+        }

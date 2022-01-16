@@ -2,7 +2,7 @@ import sys
 import argparse
 
 from hydra.app import HydraApp
-from hydra.rpc import HydraRPC
+from hydra.rpc import HydraRPC, ExplorerRPC
 
 
 @HydraApp.register(name="cli", desc="rpc cli interface", version="1.01")
@@ -22,10 +22,16 @@ class HydraCLIApp(HydraApp):
 
     def run(self):
         rpc = self.rpc
+        call: str = self.args.call
 
-        result = rpc.call(self.args.call, *self.args.params, raw=True)
+        if call.startswith("x."):
+            xrpc = ExplorerRPC(mainnet=rpc.mainnet)
+            call = call.replace("x.", "", 1)
+            result = xrpc.call(call, *self.args.params)
+        else:
+            result = rpc.call(call, *self.args.params, raw=True)
 
-        self.render(result=result, name=self.args.call, print_fn=self.print_fn)
+        self.render(result=result, name=call, print_fn=self.print_fn)
 
     def print_fn(self, line: str):
         print(line)
