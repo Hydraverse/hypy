@@ -3,6 +3,7 @@
 import argparse
 import importlib
 import json
+import os
 from collections import namedtuple
 from attrdict import AttrDict
 
@@ -64,7 +65,8 @@ class HydraApp:
 
         self.args = AttrDict(self.args)
 
-        self.rpc = HydraRPC.__from_parsed__(self.args)
+        if not os.getenv("HYPY_NO_RPC_ARGS", False):
+            self.rpc = HydraRPC.__from_parsed__(self.args)
 
         super().__init__()
 
@@ -138,25 +140,28 @@ class HydraApp:
     def parser(parser: argparse.ArgumentParser):
         """Add method parameters to the argument parser.
         """
-        HydraRPC.__parser__(parser)
+        if not os.getenv("HYPY_NO_RPC_ARGS", False):
+            HydraRPC.__parser__(parser)
 
-        parser.add_argument(
-            "-J", "--json-pretty", action="store_true", help="output parseable json",
-            default=False,
-            required=False
-        )
+        if not os.getenv("HYPY_NO_JSON_ARGS", False):
 
-        parser.add_argument(
-            "-j", "--json", action="store_true", help="output parseable json",
-            default=False,
-            required=False
-        )
+            parser.add_argument(
+                "-J", "--json-pretty", action="store_true", help="output parseable json",
+                default=False,
+                required=False
+            )
 
-        parser.add_argument(
-            "-f", "--full", action="store_true", help="output full names (non-json only)",
-            default=False,
-            required=False
-        )
+            parser.add_argument(
+                "-j", "--json", action="store_true", help="output parseable json",
+                default=False,
+                required=False
+            )
+
+            parser.add_argument(
+                "-f", "--full", action="store_true", help="output full names (non-json only)",
+                default=False,
+                required=False
+            )
 
     @staticmethod
     def __new_entry(cls, name, desc="", aliases=None, version=None):
