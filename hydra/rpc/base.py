@@ -147,6 +147,10 @@ class BaseRPC:
     def url(self):
         return self.__url
 
+    @url.setter
+    def url(self, url):
+        self.__url = url
+
     def get(self, path: str) -> BaseRPC.Result:
         if self.__session is None:
             self.__session = Session()

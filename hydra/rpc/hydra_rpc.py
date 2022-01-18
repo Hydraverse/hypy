@@ -9,22 +9,18 @@ from hydra.rpc.base import BaseRPC
 
 class HydraRPC(BaseRPC):
     __mainnet: bool = None
-    __url: str = f"main://127.0.0.1"
+    URL_DEFAULT: str = f"main://127.0.0.1"
 
     MAINNET_PORT = 3389
     TESTNET_PORT = 13389
 
-    def __init__(self, url: [str, tuple] = __url, wallet: str = None):
-        self.__mainnet, self.__url = HydraRPC.__parse_url__(url, wallet) if not isinstance(url, tuple) else url
-        super().__init__(self.__url)
-
-    @property
-    def url(self):
-        return self.__url
+    def __init__(self, url: [str, tuple] = URL_DEFAULT, wallet: str = None):
+        self.__mainnet, _url = HydraRPC.__parse_url__(url, wallet) if not isinstance(url, tuple) else url
+        super().__init__(_url)
 
     @property
     def wallet(self) -> Optional[str]:
-        scheme, netloc, path, query, fragment = urlsplit(self.__url)
+        scheme, netloc, path, query, fragment = urlsplit(self.url)
 
         wallet_path = path.rsplit("/", 1)
 
@@ -33,14 +29,14 @@ class HydraRPC(BaseRPC):
 
     @wallet.setter
     def wallet(self, wallet: Optional[str]):
-        scheme, netloc, path, query, fragment = urlsplit(self.__url)
+        scheme, netloc, path, query, fragment = urlsplit(self.url)
 
         if wallet is None:
             path = ""
         else:
             path = f"/wallet/{wallet}"
 
-        self.__url = urlunsplit((scheme, netloc, path, query, fragment))
+        self.url = urlunsplit((scheme, netloc, path, query, fragment))
 
     @staticmethod
     def __parse_url__(url: str, wallet: str = None, testnet=False):
@@ -109,7 +105,7 @@ class HydraRPC(BaseRPC):
     @staticmethod
     def __parser__(parser: argparse.ArgumentParser):
 
-        parser.add_argument("--rpc", default=os.environ.get("HY_RPC", HydraRPC.__url), type=str,
+        parser.add_argument("--rpc", default=os.environ.get("HY_RPC", HydraRPC.URL_DEFAULT), type=str,
                             help="rpc url (env: HY_RPC)", required=False)
 
         parser.add_argument("--rpc-wallet", default=os.environ.get("HY_RPC_WALLET", None),
@@ -127,6 +123,7 @@ class HydraRPC(BaseRPC):
         wallet = os.environ.get("HY_RPC_WALLET", args.rpc_wallet)
         testnet = os.environ.get("HY_RPC_TESTNET", args.rpc_testnet)
 
+        # noinspection PyTypeChecker
         return HydraRPC(url=HydraRPC.__parse_url__(rpc, wallet, testnet))
 
     @property
