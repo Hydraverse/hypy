@@ -8,38 +8,24 @@ from hydra.rpc.base import BaseRPC
 
 
 class HydraRPC(BaseRPC):
-    __mainnet: bool = None
     URL_DEFAULT: str = f"main://127.0.0.1"
 
     MAINNET_PORT = 3389
     TESTNET_PORT = 13389
 
-    def __init__(self, url: [str, tuple] = URL_DEFAULT, wallet: str = None):
-        self.__mainnet, _url = HydraRPC.__parse_url__(url, wallet) if not isinstance(url, tuple) else url
+    __mainnet: bool
+    wallet: Optional[str]
+
+    def __init__(self, url: [str, tuple] = URL_DEFAULT, wallet: Optional[str] = None):
+        self.wallet = wallet
+        self.__mainnet, _url = HydraRPC.__parse_url__(url) if not isinstance(url, tuple) else url
         super().__init__(_url)
 
-    @property
-    def wallet(self) -> Optional[str]:
-        scheme, netloc, path, query, fragment = urlsplit(self.url)
-
-        wallet_path = path.rsplit("/", 1)
-
-        if len(wallet_path) == 2 and wallet_path[0] == "/wallet":
-            return wallet_path[1]
-
-    @wallet.setter
-    def wallet(self, wallet: Optional[str]):
-        scheme, netloc, path, query, fragment = urlsplit(self.url)
-
-        if wallet is None:
-            path = ""
-        else:
-            path = f"/wallet/{wallet}"
-
-        self.url = urlunsplit((scheme, netloc, path, query, fragment))
+    def __repr__(self):
+        return f"{self.__class__.__name__}(url=\"{self.url}\", wallet=\"{self.wallet}\")"
 
     @staticmethod
-    def __parse_url__(url: str, wallet: str = None, testnet=False):
+    def __parse_url__(url: str, testnet=False):
         url_split = urlsplit(url)
 
         schemes_hydra = ("mainnet", "main", "testnet", "test")
@@ -50,12 +36,6 @@ class HydraRPC(BaseRPC):
 
         if scheme not in schemes:
             raise ValueError(f"Invalid scheme for url: {url}")
-
-        path = url_split.path
-
-        if wallet is not None:
-            path = os.path.join(path, f"/wallet/{wallet}")
-
         netloc = str(url_split.netloc)
 
         if not url_split.username and not url_split.password:
@@ -79,7 +59,7 @@ class HydraRPC(BaseRPC):
         return mainnet, urlunsplit((
             "http",
             netloc,
-            path,
+            url_split.path,
             url_split.query,
             url_split.fragment
         ))
@@ -118,21 +98,33 @@ class HydraRPC(BaseRPC):
 
     @staticmethod
     def __from_parsed__(args):
-        # Override given parameters
-        rpc = os.environ.get("HY_RPC", args.rpc)
-        wallet = os.environ.get("HY_RPC_WALLET", args.rpc_wallet)
-        testnet = os.environ.get("HY_RPC_TESTNET", args.rpc_testnet)
+        # Leave environ overrides in param defaults.
+        rpc = args.rpc
+        wallet = args.rpc_wallet
+        testnet = args.rpc_testnet
 
         # noinspection PyTypeChecker
-        return HydraRPC(url=HydraRPC.__parse_url__(rpc, wallet, testnet))
+        return HydraRPC(url=HydraRPC.__parse_url__(rpc, testnet=testnet), wallet=wallet)
 
     @property
     def mainnet(self):
         return self.__mainnet
 
     def call(self, name: str, *args, raw=False):
-        result = super().post(name, *filter(lambda a: a is not ..., args))
+        result = super().post(
+            f"/wallet/{self.wallet}" if self.wallet is not None else "/",
+            **HydraRPC.__build_request_dict(name, *filter(lambda a: a is not ..., args))
+        )
         return result if raw else result.Value
+
+    @staticmethod
+    def __build_request_dict(name: str, *args, id_: int = 1) -> dict:
+        return {
+            "id": id_,
+            "jsonrpc": "2.0",
+            "method": name,
+            "params": list(args)
+        }
 
     # == Blockchain ==
 

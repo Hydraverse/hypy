@@ -179,16 +179,16 @@ class BaseRPC:
 
         return BaseRPC.Result(json)
 
-    def post(self, name: str, *args) -> BaseRPC.Result:
+    def post(self, path: str, **request) -> BaseRPC.Result:
         if self.__session is None:
             self.__session = Session()
 
-        request = BaseRPC.__build_request_dict(name, *args)
+        request_url = self.__build_request_path(path)
 
-        log.debug(f"post [{self.__url}] {name} request={request}")
+        log.debug(f"post [{request_url}] request={request}")
 
         rsp: Response = self.__session.post(
-            url=self.__url,
+            url=request_url,
             json=request
         )
 
@@ -207,18 +207,7 @@ class BaseRPC:
     def __build_request_path(self, request_path: str) -> str:
         scheme, netloc, path, query, fragment = urlsplit(self.url)
 
-        if request_path.startswith("/"):
-            request_path = request_path[1:]
-
-        path = os.path.join(path, request_path)
+        path = os.path.join(path, request_path)  # if request_path[0] == '/', this overwrites anything in the existing path.
 
         return urlunsplit((scheme, netloc, path, query, fragment))
 
-    @staticmethod
-    def __build_request_dict(name: str, *args, id_: int = 1) -> dict:
-        return {
-            "id": id_,
-            "jsonrpc": "2.0",
-            "method": name,
-            "params": list(args)
-        }
