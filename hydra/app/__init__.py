@@ -84,7 +84,10 @@ class HydraApp:
             if log.level() <= log.INFO:
                 raise
 
-            print(json.dumps(err.__serialize__(), indent=2 if self.args.json_pretty else None))
+            if self.args.json:
+                print(json.dumps(err.__serialize__(), indent=2 if self.args.json_pretty else None))
+            else:
+                self.render(err.error, "error")
             exit(-1)
 
     def __auto_setup_fail(self, *args, **kwds):
