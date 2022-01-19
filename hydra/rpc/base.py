@@ -14,6 +14,12 @@ class BaseRPC:
     __url = None
     __session = None
 
+    DEFAULT_GET_HEADERS = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36",
+    }
+
+    DEFAULT_POST_HEADERS = {}
+
     class Exception(BaseException):
         response: Response = None
         error: BaseRPC.Result = None
@@ -151,7 +157,7 @@ class BaseRPC:
     def url(self, url):
         self.__url = url
 
-    def get(self, path: str) -> BaseRPC.Result:
+    def get(self, path: str, *, raw=False, headers: Optional[dict] = None) -> [BaseRPC.Result, Response]:
         if self.__session is None:
             self.__session = Session()
 
@@ -159,27 +165,33 @@ class BaseRPC:
 
         log.debug(f"get [{request_url}]")
 
+        request_headers = dict(self.DEFAULT_GET_HEADERS)
+
+        request_headers.update({
+            "referer": request_url
+        })
+
+        if headers is not None:
+            request_headers.update(headers)
+
         rsp: Response = self.__session.get(
             url=request_url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36",
-                "referer": request_url,
-            }
+            headers=request_headers
         )
+
+        if raw:
+            return rsp
 
         if not rsp.ok:
             raise BaseRPC.Exception(rsp)
 
         json = rsp.json()
 
-        if "error" in json and json["error"]:
-            raise BaseRPC.Exception(rsp)
-
         log.debug(f"result: {json}")
 
         return BaseRPC.Result(json)
 
-    def post(self, path: str, **request) -> BaseRPC.Result:
+    def post(self, path: str, *, raw=False, headers: Optional[dict] = None, **request) -> [BaseRPC.Result, Response]:
         if self.__session is None:
             self.__session = Session()
 
@@ -187,18 +199,24 @@ class BaseRPC:
 
         log.debug(f"post [{request_url}] request={request}")
 
+        request_headers = dict(self.DEFAULT_POST_HEADERS)
+
+        if headers is not None:
+            request_headers.update(headers)
+
         rsp: Response = self.__session.post(
             url=request_url,
-            json=request
+            json=request,
+            headers=request_headers
         )
+
+        if raw:
+            return rsp
 
         if not rsp.ok:
             raise BaseRPC.Exception(rsp)
 
         json = rsp.json()
-
-        if json["error"]:
-            raise BaseRPC.Exception(rsp)
 
         log.debug(f"result: {json}")
 

@@ -4,4 +4,4 @@ __all__ = (
     "app", "hy", "log", "rpc", "test", "util"
 )
 
-VERSION = "2.4.2"
+VERSION = "2.4.3"

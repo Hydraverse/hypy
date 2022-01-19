@@ -111,10 +111,22 @@ class HydraRPC(BaseRPC):
         return self.__mainnet
 
     def call(self, name: str, *args, raw=False):
-        result = super().post(
+        rsp = super().post(
             f"/wallet/{self.wallet}" if self.wallet is not None else "/",
+            raw=True,
             **HydraRPC.__build_request_dict(name, *filter(lambda a: a is not ..., args))
         )
+
+        if not rsp.ok:
+            raise BaseRPC.Exception(rsp)
+
+        json_ = rsp.json()
+
+        if "error" in json_ and json_["error"]:
+            raise BaseRPC.Exception(rsp)
+
+        result = BaseRPC.Result(json_)
+
         return result if raw else result.Value
 
     @staticmethod
