@@ -54,20 +54,21 @@ class BaseRPC:
                 ]
             return lst
 
-        def __init__(self, json: dict = None):
-            if json is None:
-                json = {}
-            elif not isinstance(json, dict):
-                json = {"result": json}
-
+        def __init__(self, result: [dict, object] = None):
+            if result is None:
+                json_ = {}
+            elif not isinstance(result, dict):
+                json_ = {"result": result}
             else:
-                for key, value in json.items():
-                    if isinstance(value, dict):
-                        json[key] = BaseRPC.Result(value)
-                    elif isinstance(value, list):
-                        json[key] = BaseRPC.Result.__conv_list(value)
+                json_ = result
 
-            super(BaseRPC.Result, self).__init__(json)
+                for key, value in json_.items():
+                    if isinstance(value, dict):
+                        json_[key] = BaseRPC.Result(value)
+                    elif isinstance(value, list):
+                        json_[key] = BaseRPC.Result.__conv_list(value)
+
+            super(BaseRPC.Result, self).__init__(json_)
 
         def __str__(self):
             value = self.Value
@@ -171,6 +172,10 @@ class BaseRPC:
             self.__session = Session()
 
         return self.__session
+
+    @property
+    def response_factory(self):
+        return self.__response_factory
 
     RESPONSE_FACTORY_RSLT = lambda rsp: BaseRPC.Result(rsp.json())
     RESPONSE_FACTORY_JSON = lambda rsp: rsp.json()

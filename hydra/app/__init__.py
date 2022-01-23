@@ -8,7 +8,7 @@ from collections import namedtuple
 from attrdict import AttrDict
 
 from hydra import log
-from hydra.rpc import HydraRPC
+from hydra.rpc import BaseRPC, HydraRPC
 
 
 APPS = "cli", "test", "ascan", "atrace", "call", "lstx", "txvio", "peerscan", "top"
@@ -99,9 +99,12 @@ class HydraApp:
     def __setstate__(self, state):
         self.hy, self.args, self.log = state
 
-    def render(self, result: HydraRPC.Result, name: str, print_fn=print, ljust=None):
+    def render(self, result: [BaseRPC.Result, object], name: str, print_fn=print, ljust=None):
         """Render a HydraRPC.Result dict.
         """
+        if not isinstance(result, BaseRPC.Result):
+            result = BaseRPC.Result(result)
+
         if self.args.get("json", False) or self.args.get("json_pretty", False):
             print_fn(json.dumps(
                 result.__serialize__(name=name),

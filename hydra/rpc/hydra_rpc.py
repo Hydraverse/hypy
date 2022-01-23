@@ -16,12 +16,18 @@ class HydraRPC(BaseRPC):
     __mainnet: bool
     wallet: Optional[str]
 
+    RESPONSE_FACTORY_HYDR = lambda rsp: BaseRPC.RESPONSE_FACTORY_RSLT(rsp).Value
+
     def __init__(self, url: [str, tuple] = URL_DEFAULT, wallet: Optional[str] = None, *, response_factory=None):
         self.wallet = wallet
         self.__mainnet, _url = HydraRPC.__parse_url__(url) if not isinstance(url, tuple) else url
         super().__init__(
             url=_url,
-            response_factory=response_factory
+            response_factory=(
+                response_factory
+                if response_factory is not None else
+                HydraRPC.RESPONSE_FACTORY_HYDR
+            )
         )
 
     def __repr__(self):
@@ -113,10 +119,15 @@ class HydraRPC(BaseRPC):
     def mainnet(self):
         return self.__mainnet
 
-    def call(self, name: str, *args):
+    def call(self, name: str, *args, raw_result: bool = False):
         return super().post(
             f"/wallet/{self.wallet}" if self.wallet is not None else "/",
-            **HydraRPC.__build_request_dict(name, *filter(lambda a: a is not ..., args))
+            **HydraRPC.__build_request_dict(name, *filter(lambda a: a is not ..., args)),
+            response_factory=(
+                BaseRPC.RESPONSE_FACTORY_RSLT
+                if raw_result is True else
+                self.response_factory
+            )
         )
 
     @staticmethod

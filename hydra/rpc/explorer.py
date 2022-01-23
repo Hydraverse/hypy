@@ -8,15 +8,27 @@ class ExplorerRPC(BaseRPC):
     def __init__(self, mainnet: bool = True, *, response_factory=None):
         super().__init__(
             ExplorerRPC.URL_MAIN if mainnet else ExplorerRPC.URL_TEST,
-            response_factory=response_factory
+            response_factory=(
+                response_factory
+                if response_factory is not None else
+                BaseRPC.RESPONSE_FACTORY_JSON
+            )
         )
 
     @property
     def mainnet(self) -> bool:
         return self.url == ExplorerRPC.URL_MAIN
 
-    def call(self, name: str, *args):
-        return ExplorerRPC.__CALLS__[name](self, *args)
+    def call(self, name: str, *args, raw_result: bool = False):
+        return ExplorerRPC.__CALLS__[name](
+            self,
+            *args,
+            response_factory=(
+                BaseRPC.RESPONSE_FACTORY_RSLT
+                if raw_result is True else
+                self.response_factory
+            )
+        )
 
     def get_address(self, hydra_address: str):
         return self.get(f"address/{hydra_address}")
