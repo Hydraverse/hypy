@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from typing import Optional
 from urllib.parse import urlsplit, urlunsplit
@@ -27,7 +28,10 @@ class BaseRPC:
 
         def __init__(self, response: Response):
             self.response = response
-            self.error = BaseRPC.Result(response.json()) if len(response.content) else None
+            try:
+                self.error = BaseRPC.Result(response.json()) if len(response.content) else None
+            except json.JSONDecodeError:
+                self.error = BaseRPC.Result(str(response.content, encoding="utf-8"))
 
         def __str__(self) -> str:
             return str(self.error) if self.error is not None else str(self.response)

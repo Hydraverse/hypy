@@ -79,7 +79,7 @@ class HydraApp:
         try:
             return self.__run(*args, **kwds)
 
-        except HydraRPC.Exception as err:
+        except BaseRPC.Exception as err:
 
             if log.level() <= log.INFO:
                 raise

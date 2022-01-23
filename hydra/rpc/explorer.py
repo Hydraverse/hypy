@@ -30,17 +30,17 @@ class ExplorerRPC(BaseRPC):
             )
         )
 
-    def get_address(self, hydra_address: str):
-        return self.get(f"address/{hydra_address}")
+    def get_address(self, hydra_address: str, **kwds):
+        return self.get(f"address/{hydra_address}", **kwds)
 
-    def get_tx(self, txid: str):
-        return self.get(f"tx/{txid}")
+    def get_tx(self, txid: str, **kwds):
+        return self.get(f"tx/{txid}", **kwds)
 
-    def get_block(self, hash_or_height: [str, int]):
-        return self.get(f"block/{hash_or_height}")
+    def get_block(self, hash_or_height: [str, int], **kwds):
+        return self.get(f"block/{hash_or_height}", **kwds)
 
-    def get_contract(self, hex_address: str):
-        return self.get(f"contract/{hex_address}")
+    def get_contract(self, hex_address: str, **kwds):
+        return self.get(f"contract/{hex_address}", **kwds)
 
     __CALLS__ = {
         c.__name__.replace("get_", "", 1): c
