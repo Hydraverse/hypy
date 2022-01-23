@@ -13,6 +13,7 @@ from hydra import log
 class BaseRPC:
     __url = None
     __session = None
+    __response_factory = None
 
     DEFAULT_GET_HEADERS = {
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36",
@@ -56,6 +57,8 @@ class BaseRPC:
         def __init__(self, json: dict = None):
             if json is None:
                 json = {}
+            elif not isinstance(json, dict):
+                json = {"result": json}
 
             else:
                 for key, value in json.items():
@@ -143,8 +146,13 @@ class BaseRPC:
                         (name if full else "") + f".{key}", value, level=level + 1, full=full
                     )
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, *, response_factory=None):
         self.__url = url
+        self.__response_factory = (
+            response_factory
+            if response_factory is not None else
+            BaseRPC.RESPONSE_FACTORY_RSLT
+        )
 
     def __repr__(self):
         return f"{self.__class__.__name__}(url=\"{self.__url}\")"
@@ -157,72 +165,76 @@ class BaseRPC:
     def url(self, url):
         self.__url = url
 
-    def get(self, path: str, *, raw=False, headers: Optional[dict] = None) -> [BaseRPC.Result, Response]:
+    @property
+    def session(self):
         if self.__session is None:
             self.__session = Session()
 
-        request_url = self.__build_request_path(path)
+        return self.__session
 
-        log.debug(f"get [{request_url}]")
+    RESPONSE_FACTORY_RSLT = lambda rsp: BaseRPC.Result(rsp.json())
+    RESPONSE_FACTORY_JSON = lambda rsp: rsp.json()
 
-        request_headers = dict(self.DEFAULT_GET_HEADERS)
+    def request(self, *, request_type: str, path: Optional[str], response_factory=None, **kwds):
+        session = self.session
+        request_fn = getattr(session, request_type, None)
 
-        request_headers.update({
-            "referer": request_url
-        })
+        if not callable(request_fn):
+            raise ValueError(f"Unknown request_type '{request_type}'")
 
-        if headers is not None:
-            request_headers.update(headers)
+        request_url = self.__build_request_url(path)
 
-        rsp: Response = self.__session.get(
+        log.debug(f"{request_type} [{request_url}]")
+
+        rsp: Response = request_fn(
             url=request_url,
-            headers=request_headers
+            **kwds
         )
-
-        if raw:
-            return rsp
 
         if not rsp.ok:
             raise BaseRPC.Exception(rsp)
 
-        json = rsp.json()
+        return (
+            response_factory(rsp)
+            if response_factory is not None else
+            self.__response_factory(rsp)
+        )
 
-        log.debug(f"result: {json}")
+    def get(self, path: str, *, headers: Optional[dict] = None, response_factory=None) -> [BaseRPC.Result, Response, object]:
+        request_headers = dict(self.DEFAULT_GET_HEADERS)
 
-        return BaseRPC.Result(json)
+        request_headers.update({
+            "referer": self.url
+        })
 
-    def post(self, path: str, *, raw=False, headers: Optional[dict] = None, **request) -> [BaseRPC.Result, Response]:
-        if self.__session is None:
-            self.__session = Session()
+        if headers is not None and len(headers):
+            request_headers.update(headers)
 
-        request_url = self.__build_request_path(path)
+        return self.request(
+            request_type="get",
+            path=path,
+            response_factory=response_factory,
+            headers=request_headers,
+        )
 
-        log.debug(f"post [{request_url}] request={request}")
-
+    def post(self, path: str, *, request_type: str = "post", headers: Optional[dict] = None, response_factory=None, **request) -> [BaseRPC.Result, Response]:
         request_headers = dict(self.DEFAULT_POST_HEADERS)
 
         if headers is not None:
             request_headers.update(headers)
 
-        rsp: Response = self.__session.post(
-            url=request_url,
+        return self.request(
+            request_type=request_type,
+            path=path,
+            response_factory=response_factory,
+            headers=request_headers,
             json=request,
-            headers=request_headers
         )
 
-        if raw:
-            return rsp
+    def __build_request_url(self, request_path: Optional[str]) -> str:
+        if request_path is None or not len(request_path):
+            return self.url
 
-        if not rsp.ok:
-            raise BaseRPC.Exception(rsp)
-
-        json = rsp.json()
-
-        log.debug(f"result: {json}")
-
-        return BaseRPC.Result(json)
-
-    def __build_request_path(self, request_path: str) -> str:
         scheme, netloc, path, query, fragment = urlsplit(self.url)
 
         path = os.path.join(path, request_path)  # if request_path[0] == '/', this overwrites anything in the existing path.

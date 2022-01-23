@@ -16,10 +16,13 @@ class HydraRPC(BaseRPC):
     __mainnet: bool
     wallet: Optional[str]
 
-    def __init__(self, url: [str, tuple] = URL_DEFAULT, wallet: Optional[str] = None):
+    def __init__(self, url: [str, tuple] = URL_DEFAULT, wallet: Optional[str] = None, *, response_factory=None):
         self.wallet = wallet
         self.__mainnet, _url = HydraRPC.__parse_url__(url) if not isinstance(url, tuple) else url
-        super().__init__(_url)
+        super().__init__(
+            url=_url,
+            response_factory=response_factory
+        )
 
     def __repr__(self):
         return f"{self.__class__.__name__}(url=\"{self.url}\", wallet=\"{self.wallet}\")"
@@ -110,24 +113,11 @@ class HydraRPC(BaseRPC):
     def mainnet(self):
         return self.__mainnet
 
-    def call(self, name: str, *args, raw=False):
-        rsp = super().post(
+    def call(self, name: str, *args):
+        return super().post(
             f"/wallet/{self.wallet}" if self.wallet is not None else "/",
-            raw=True,
             **HydraRPC.__build_request_dict(name, *filter(lambda a: a is not ..., args))
         )
-
-        if not rsp.ok:
-            raise BaseRPC.Exception(rsp)
-
-        json_ = rsp.json()
-
-        if "error" in json_ and json_["error"]:
-            raise BaseRPC.Exception(rsp)
-
-        result = BaseRPC.Result(json_)
-
-        return result if raw else result.Value
 
     @staticmethod
     def __build_request_dict(name: str, *args, id_: int = 1) -> dict:

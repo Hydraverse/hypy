@@ -102,30 +102,23 @@ class HydraApp:
     def render(self, result: HydraRPC.Result, name: str, print_fn=print, ljust=None):
         """Render a HydraRPC.Result dict.
         """
-        if self.args.json or self.args.json_pretty:
+        if self.args.get("json", False) or self.args.get("json_pretty", False):
             print_fn(json.dumps(
                 result.__serialize__(name=name),
-                indent=2 if self.args.json_pretty else None
+                indent=2 if self.args.get("json_pretty", False) else None
             ))
 
         else:
-            spaces = (lambda lvl: "  " * lvl) if not self.args.full else lambda lvl: ""
+            full = self.args.get("full", False)
+            spaces = (lambda lvl: "  " * lvl) if not full else lambda lvl: ""
 
             if self.args.get("unbuffered", False):
-                for line in result.render(name=name, spaces=spaces, full=self.args.full, longest=ljust):
+                for line in result.render(name=name, spaces=spaces, full=full, longest=ljust):
                     print_fn(line)
             else:
                 print_fn("\n".join(
-                    result.render(name=name, spaces=spaces, full=self.args.full, longest=ljust)
+                    result.render(name=name, spaces=spaces, full=full, longest=ljust)
                 ))
-
-    # @property
-    # def info(self) -> MethodInfo:
-    #     for info in __INFO__.values():
-    #         if info.cls == self.__class__:
-    #             return info
-    #
-    #     raise ModuleNotFoundError
 
     def setup(self):
         if self.args.json_pretty:

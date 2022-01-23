@@ -2,13 +2,18 @@ from hydra.rpc.base import BaseRPC
 
 
 class ExplorerRPC(BaseRPC):
-    TEST_URL: str = "https://testexplorer.hydrachain.org/api"
-    MAIN_URL: str = "https://explorer.hydrachain.org/api"
+    URL_TEST: str = "https://testexplorer.hydrachain.org/api"
+    URL_MAIN: str = "https://explorer.hydrachain.org/api"
 
-    def __init__(self, mainnet: bool = True):
+    def __init__(self, mainnet: bool = True, *, response_factory=None):
         super().__init__(
-            ExplorerRPC.MAIN_URL if mainnet else ExplorerRPC.TEST_URL
+            ExplorerRPC.URL_MAIN if mainnet else ExplorerRPC.URL_TEST,
+            response_factory=response_factory
         )
+
+    @property
+    def mainnet(self) -> bool:
+        return self.url == ExplorerRPC.URL_MAIN
 
     def call(self, name: str, *args):
         return ExplorerRPC.__CALLS__[name](self, *args)
