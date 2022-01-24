@@ -22,6 +22,9 @@ class BaseRPC:
 
     DEFAULT_POST_HEADERS = {}
 
+    RESPONSE_FACTORY_RSLT = lambda rsp: BaseRPC.Result(rsp.json())
+    RESPONSE_FACTORY_JSON = lambda rsp: BaseRPC.Result(rsp.json()).Value
+
     class Exception(BaseException):
         response: Response = None
         error: BaseRPC.Result = None
@@ -60,17 +63,11 @@ class BaseRPC:
 
         def __init__(self, result: [dict, object] = None):
             if result is None:
-                json_ = {}
+                json_ = AttrDict()
             elif not isinstance(result, dict):
-                json_ = {"result": result}
+                json_ = AttrDict(result=result)
             else:
-                json_ = result
-
-                for key, value in json_.items():
-                    if isinstance(value, dict):
-                        json_[key] = BaseRPC.Result(value)
-                    elif isinstance(value, list):
-                        json_[key] = BaseRPC.Result.__conv_list(value)
+                json_ = AttrDict(result)
 
             super(BaseRPC.Result, self).__init__(json_)
 
@@ -180,9 +177,6 @@ class BaseRPC:
     @property
     def response_factory(self):
         return self.__response_factory
-
-    RESPONSE_FACTORY_RSLT = lambda rsp: BaseRPC.Result(rsp.json())
-    RESPONSE_FACTORY_JSON = lambda rsp: rsp.json()
 
     def request(self, *, request_type: str, path: Optional[str], response_factory=None, **kwds):
         session = self.session

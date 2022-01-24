@@ -16,8 +16,6 @@ class HydraRPC(BaseRPC):
     __mainnet: bool
     wallet: Optional[str]
 
-    RESPONSE_FACTORY_HYDR = lambda rsp: BaseRPC.RESPONSE_FACTORY_RSLT(rsp).Value
-
     def __init__(self, url: [str, tuple] = URL_DEFAULT, wallet: Optional[str] = None, *, response_factory=None):
         self.wallet = wallet
         self.__mainnet, _url = HydraRPC.__parse_url__(url) if not isinstance(url, tuple) else url
@@ -26,7 +24,7 @@ class HydraRPC(BaseRPC):
             response_factory=(
                 response_factory
                 if response_factory is not None else
-                HydraRPC.RESPONSE_FACTORY_HYDR
+                HydraRPC.RESPONSE_FACTORY_JSON
             )
         )
 
