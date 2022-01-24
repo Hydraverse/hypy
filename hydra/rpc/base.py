@@ -78,8 +78,8 @@ class BaseRPC:
         # noinspection PyPep8Naming
         @property
         def Value(self):
-            result = self.get("result", ...)
-            error = self.get("error", ...)
+            result = getattr(self, "result", ...)
+            error = getattr(self, "error", ...)
 
             return error if error not in (None, ...) \
                 else result if result is not ... \
