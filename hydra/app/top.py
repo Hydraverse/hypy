@@ -4,6 +4,8 @@ import pytz
 import time
 import curses
 
+from attrdict import AttrDict
+
 from hydra.app import HydraApp
 from hydra.rpc.base import BaseRPC
 from hydra.test import Test
@@ -57,7 +59,7 @@ class TopApp(HydraApp):
                 self._curses_cleanup()
 
     def read(self):
-        result = BaseRPC.Result()
+        result = AttrDict()
 
         result.now = datetime.now(tz=pytz.timezone(self.args.timezone))
         result.utcnow = datetime.utcnow()
@@ -124,7 +126,7 @@ class TopApp(HydraApp):
 
         if not self.args.json:
             for key, value in result.items():
-                if not isinstance(value, BaseRPC.Result):
+                if not isinstance(value, AttrDict):
                     print(key.ljust(self.ljust) + str(value))
                 else:
                     print()
