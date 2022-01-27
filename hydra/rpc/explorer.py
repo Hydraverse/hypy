@@ -1,3 +1,7 @@
+from typing import Callable, Any
+
+from requests import Response
+
 from hydra.rpc.base import BaseRPC
 
 
@@ -19,15 +23,11 @@ class ExplorerRPC(BaseRPC):
     def mainnet(self) -> bool:
         return self.url == ExplorerRPC.URL_MAIN
 
-    def call(self, name: str, *args, raw_result: bool = False):
+    def call(self, name: str, *args, response_factory: Callable[[Response], Any] = None):
         return ExplorerRPC.__CALLS__[name](
             self,
             *args,
-            response_factory=(
-                BaseRPC.RESPONSE_FACTORY_RSLT
-                if raw_result is True else
-                self.response_factory
-            )
+            response_factory=response_factory
         )
 
     def get_address(self, hydra_address: str, **kwds):

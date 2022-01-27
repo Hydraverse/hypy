@@ -31,9 +31,9 @@ class HydraCLIApp(HydraApp):
         if call.startswith("x."):
             xrpc = ExplorerRPC(mainnet=rpc.mainnet)
             call = call.replace("x.", "", 1)
-            result = xrpc.call(call, *self.args.params, raw_result=True)
+            result = xrpc.call(call, *self.args.params)
         else:
-            result = rpc.call(call, *self.args.params, raw_result=True)
+            result = rpc.call(call, *self.args.params)
 
         self.render(result=result, name=call, print_fn=self.print_fn)
 

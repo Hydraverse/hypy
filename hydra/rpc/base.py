@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Optional
+from typing import Optional, Callable, Any
 from urllib.parse import urlsplit, urlunsplit
 
 from requests import Response, Session
@@ -22,19 +22,33 @@ class BaseRPC:
 
     DEFAULT_POST_HEADERS = {}
 
-    RESPONSE_FACTORY_RSLT = lambda rsp: BaseRPC.Result(rsp.json())
-    RESPONSE_FACTORY_JSON = lambda rsp: BaseRPC.Result(rsp.json()).Value
+    RESPONSE_FACTORY_RESP = lambda response: response
+
+    @staticmethod
+    def RESPONSE_FACTORY_JSON(rsp: Response) -> [AttrDict, str]:
+        try:
+            return rsp.json(object_hook=AttrDict)
+        except json.JSONDecodeError:
+            return str(rsp.content, encoding="utf-8")
 
     class Exception(BaseException):
-        response: Response = None
-        error: BaseRPC.Result = None
+        response: Response
+        error: Optional[AttrDict, str]
 
         def __init__(self, response: Response):
             self.response = response
             try:
-                self.error = BaseRPC.Result(response.json()) if len(response.content) else None
+                if len(response.content):
+                    rslt = BaseRPC.RESPONSE_FACTORY_JSON(response)
+
+                    if "error" in rslt:
+                        rslt = rslt.error
+                else:
+                    rslt = None
+
+                self.error = rslt
             except json.JSONDecodeError:
-                self.error = BaseRPC.Result(str(response.content, encoding="utf-8"))
+                self.error = str(response.content, encoding="utf-8")
 
         def __str__(self) -> str:
             return str(self.error) if self.error is not None else str(self.response)
@@ -42,118 +56,12 @@ class BaseRPC:
         def __repr__(self) -> str:
             return repr(self.error) if self.error is not None else repr(self.response)
 
-        def __serialize__(self):
-            return {
-                "response": str(self.response),
-                "error": self.error.__serialize__(name=None) if self.error else None
-            }
-
-    class Result(AttrDict):
-
-        @staticmethod
-        def __conv_list(lst):
-            if isinstance(lst, list):
-                return [
-                    BaseRPC.Result(itm) if isinstance(itm, dict) else
-                    BaseRPC.Result.__conv_list(itm) if isinstance(itm, list) else
-                    itm
-                    for itm in lst
-                ]
-            return lst
-
-        def __init__(self, result: [dict, object] = None):
-            if result is None:
-                json_ = AttrDict()
-            elif not isinstance(result, dict):
-                json_ = AttrDict(result=result)
-            else:
-                json_ = AttrDict(result)
-
-            super(BaseRPC.Result, self).__init__(json_)
-
-        def __str__(self):
-            value = self.Value
-            return str(value) if value is not self else super().__str__()
-
-        # noinspection PyPep8Naming
-        @property
-        def Value(self):
-            result = getattr(self, "result", ...)
-            error = getattr(self, "error", ...)
-
-            return error if error not in (None, ...) \
-                else result if result is not ... \
-                else error if error is not ... \
-                else self
-
-        def __serialize__(self, name: Optional[str] = "value"):
-            o_v = self.Value
-
-            stringify = lambda v: (
-                v if isinstance(v, (list, tuple, dict, set, str, int, float))
-                else str(v)
-            )
-
-            return (
-                stringify(o_v) if name is None
-
-                else {
-                    k: getattr(v, "__serialize__", lambda: stringify(v))() for k, v in o_v.items()
-
-                } if isinstance(o_v, dict)
-
-                else [
-                    getattr(v, "__serialize__", lambda: stringify(v))() for v in o_v
-                    # Deeper nested lists will not be serialized
-
-                ] if isinstance(o_v, list)
-
-                else {name: stringify(o_v)}
-            )
-
-        def render(self, name: str, spaces=lambda lvl: "  " * lvl, longest: int = None, full: bool = False):
-            result = self.Value
-
-            if not isinstance(result, (list, dict)):
-                yield str(result)
-                return
-
-            flat = BaseRPC.Result.flatten(name, result, full=full)
-
-            if not longest:
-                flat = list(flat)
-                longest = max(len(row[0]) + len(spaces(row[2])) for row in flat) + 4
-
-            for label, value, level in flat:
-                yield f"{spaces(level)}{label}".ljust(longest) \
-                      + (str(value) if value is not ... else "")
-
-        @staticmethod
-        def flatten(name: str, result, level: int = 0, full: bool = False) -> dict:
-            if not isinstance(result, (list, dict)):
-                yield name, result, level
-                return
-
-            yield name, ..., level
-
-            if isinstance(result, list):
-                for index, value in enumerate(result):
-                    yield from BaseRPC.Result.flatten(
-                        (name if full else "")  # name.rsplit(".", 1)[0] if "." in name else name)
-                        + f"[{index}]", value, level=level + 1, full=full
-                    )
-            else:
-                for key, value in result.items():
-                    yield from BaseRPC.Result.flatten(
-                        (name if full else "") + f".{key}", value, level=level + 1, full=full
-                    )
-
-    def __init__(self, url: str, *, response_factory=None):
+    def __init__(self, url: str, *, response_factory: Callable[[Response], Any] = None):
         self.__url = url
         self.__response_factory = (
             response_factory
             if response_factory is not None else
-            BaseRPC.RESPONSE_FACTORY_RSLT
+            BaseRPC.RESPONSE_FACTORY_JSON
         )
 
     def __repr__(self):
@@ -178,7 +86,7 @@ class BaseRPC:
     def response_factory(self):
         return self.__response_factory
 
-    def request(self, *, request_type: str, path: Optional[str], response_factory=None, **kwds):
+    def request(self, *, request_type: str, path: Optional[str], response_factory: Callable[[Response], Any] = None, **kwds) -> [Response, Any]:
         session = self.session
         request_fn = getattr(session, request_type, None)
 
@@ -203,7 +111,7 @@ class BaseRPC:
             self.__response_factory(rsp)
         )
 
-    def get(self, path: str, *, headers: Optional[dict] = None, response_factory=None) -> [BaseRPC.Result, Response, object]:
+    def get(self, path: str, *, headers: Optional[dict] = None, response_factory: Callable[[Response], Any] = None) -> [Response, Any]:
         request_headers = dict(self.DEFAULT_GET_HEADERS)
 
         request_headers.update({
@@ -220,7 +128,7 @@ class BaseRPC:
             headers=request_headers,
         )
 
-    def post(self, path: str, *, request_type: str = "post", headers: Optional[dict] = None, response_factory=None, **request) -> [BaseRPC.Result, Response]:
+    def post(self, path: str, *, request_type: str = "post", headers: Optional[dict] = None, response_factory: Callable[[Response], Any] = None, **request) -> [Response, Any]:
         request_headers = dict(self.DEFAULT_POST_HEADERS)
 
         if headers is not None:

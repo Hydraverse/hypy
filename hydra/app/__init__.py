@@ -3,6 +3,7 @@
 import argparse
 import importlib
 import json
+
 import os
 from collections import namedtuple
 from attrdict import AttrDict
@@ -85,7 +86,7 @@ class HydraApp:
                 raise
 
             if self.args.json:
-                print(json.dumps(err.__serialize__(), indent=2 if self.args.json_pretty else None))
+                print(json.dumps(err.error or err.response, default=str, indent=2 if self.args.json_pretty else None))
             else:
                 self.render(err.error, "error")
             exit(-1)
@@ -99,15 +100,13 @@ class HydraApp:
     def __setstate__(self, state):
         self.hy, self.args, self.log = state
 
-    def render(self, result: [BaseRPC.Result, object], name: str, print_fn=print, ljust=None):
-        """Render a HydraRPC.Result dict.
+    def render(self, result: [dict, object], name: str, print_fn=print, ljust=None):
+        """Render a result.
         """
-        if not isinstance(result, BaseRPC.Result):
-            result = BaseRPC.Result(result)
-
         if self.args.get("json", False) or self.args.get("json_pretty", False):
             print_fn(json.dumps(
-                result.__serialize__(name=name),
+                result,
+                default=str,
                 indent=2 if self.args.get("json_pretty", False) else None
             ))
 
@@ -116,12 +115,48 @@ class HydraApp:
             spaces = (lambda lvl: "  " * lvl) if not full else lambda lvl: ""
 
             if self.args.get("unbuffered", False):
-                for line in result.render(name=name, spaces=spaces, full=full, longest=ljust):
+                for line in HydraApp.render_yield(result=result, name=name, spaces=spaces, full=full, longest=ljust):
                     print_fn(line)
             else:
                 print_fn("\n".join(
-                    result.render(name=name, spaces=spaces, full=full, longest=ljust)
+                    HydraApp.render_yield(result=result, name=name, spaces=spaces, full=full, longest=ljust)
                 ))
+
+    @staticmethod
+    def render_yield(result, name: str, spaces=lambda lvl: "  " * lvl, longest: int = None, full: bool = False):
+        if not isinstance(result, (list, tuple, dict)):
+            yield str(result)
+            return
+
+        flat = HydraApp.flatten(name, result, full=full)
+
+        if not longest:
+            flat = list(flat)
+            longest = max(len(row[0]) + len(spaces(row[2])) for row in flat) + 4
+
+        for label, value, level in flat:
+            yield f"{spaces(level)}{label}".ljust(longest) \
+                  + (str(value) if value is not ... else "")
+
+    @staticmethod
+    def flatten(name: str, result, level: int = 0, full: bool = False) -> dict:
+        if not isinstance(result, (list, tuple, dict)):
+            yield name, result, level
+            return
+
+        yield name, ..., level
+
+        if not isinstance(result, dict):
+            for index, value in enumerate(result):
+                yield from HydraApp.flatten(
+                    (name if full else "")  # name.rsplit(".", 1)[0] if "." in name else name)
+                    + f"[{index}]", value, level=level + 1, full=full
+                )
+        else:
+            for key, value in result.items():
+                yield from HydraApp.flatten(
+                    (f"{name}." if full else "") + f"{key}:", value, level=level + 1, full=full
+                )
 
     def setup(self):
         if self.args.json_pretty:
