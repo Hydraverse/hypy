@@ -23,6 +23,9 @@ class ExplorerRPC(BaseRPC):
     def mainnet(self) -> bool:
         return self.url == ExplorerRPC.URL_MAIN
 
+    def human_link(self, typ: str, param: Any):
+        return self.url.replace("/api", f"/{typ}/{param}")
+
     def call(self, name: str, *args, response_factory: Callable[[Response], Any] = None):
         return ExplorerRPC.__CALLS__[name](
             self,
