@@ -40,8 +40,6 @@ class BaseRPC:
         error: Optional[AttrDict, str]
 
         def __init__(self, response: Response):
-            self.asyncc = AsyncMethods(self)
-
             self.response = response
 
             try:
@@ -64,7 +62,10 @@ class BaseRPC:
             return repr(self.error) if self.error is not None else repr(self.response)
 
     def __init__(self, url: str, *, response_factory: Callable[[Response], Any] = None):
+        self.asyncc = AsyncMethods(self)
+
         self.__url = url
+
         self.__response_factory = (
             response_factory
             if response_factory is not None else
