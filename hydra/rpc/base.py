@@ -15,7 +15,7 @@ from ..util.asyncc import AsyncMethods
 
 class BaseRPC:
     __url: str
-    __session: Session
+    __session: Session = None
     __response_factory: Callable[[Response], Any]
 
     asyncc: AsyncMethods
