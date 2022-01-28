@@ -10,11 +10,15 @@ from attrdict import AttrDict
 
 from hydra import log
 
+from ..util.asyncc import AsyncMethods
+
 
 class BaseRPC:
-    __url = None
-    __session = None
-    __response_factory = None
+    __url: str
+    __session: Session
+    __response_factory: Callable[[Response], Any]
+
+    asyncc: AsyncMethods
 
     DEFAULT_GET_HEADERS = {
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36",
@@ -36,7 +40,10 @@ class BaseRPC:
         error: Optional[AttrDict, str]
 
         def __init__(self, response: Response):
+            self.asyncc = AsyncMethods(self)
+
             self.response = response
+
             try:
                 if len(response.content):
                     rslt = BaseRPC.RESPONSE_FACTORY_JSON(response)
