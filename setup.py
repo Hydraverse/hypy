@@ -26,6 +26,7 @@ setup(
         ],
     },
     install_requires=[
+        "pyyaml",
         "pytest",
         "argcomplete",
         "requests",
