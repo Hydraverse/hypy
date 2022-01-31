@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 from kucoin.client import Client
 from currencies import Currency
@@ -7,7 +7,7 @@ from currencies import Currency
 
 __all__ = "PriceClient",
 
-from util.tlru import TimedLRU
+from hydra.util.tlru import TimedLRU
 
 
 class PriceClient:
@@ -21,6 +21,8 @@ class PriceClient:
     # Generated 2022-01-31
     _avail: Tuple[str] = ('AED', 'ARS', 'AUD', 'BDT', 'BGN', 'BRL', 'CAD', 'CHF', 'CNY', 'COP', 'CZK', 'DKK', 'DZD', 'EUR', 'GBP', 'HKD', 'HRK', 'IDR', 'ILS', 'INR', 'JPY', 'KRW', 'KWD', 'KZT', 'MXN', 'MYR', 'NGN', 'NOK', 'NZD', 'PHP', 'PKR', 'PLN', 'RON', 'RUB', 'SAR', 'SEK', 'SGD', 'THB', 'TRY', 'TWD', 'UAH', 'USD', 'VND', 'ZAR')
 
+    _syms: Dict[str, str]
+
     def __init__(self, api_key: str, api_secret: str, passphrase: str, *, coin: str = "HYDRA", include_names: bool = False, sandbox: bool = False, request_params=None):
         self.coin = coin
         self._incln = include_names
@@ -32,20 +34,24 @@ class PriceClient:
         self.__init__avail()
 
     def __init__avail(self):
-        if len(self._avail):
-            return
+        if not len(self._avail):
+            _avail = []
 
-        _avail = []
+            for currency in Currency.get_currency_formats():  # type: str
+                if self._cache[currency] is not None:
+                    _avail.append(currency)
 
-        for currency in Currency.get_currency_formats():  # type: str
-            if self._cache[currency] is not None:
-                _avail.append(currency)
+            self._avail = tuple(_avail)
 
-        self._avail = tuple(_avail)
+        for curr in self._avail:
+            self._syms[curr] = Currency(curr).get_money_format(0).split("0", 1)[0]
 
     @property
     def currencies(self) -> tuple:
         return self._avail
+
+    def symbol(self, currency: str) -> str:
+        return self._syms[currency]
 
     def price(self, currency: str) -> Optional[str]:
         return self._cache[currency]
