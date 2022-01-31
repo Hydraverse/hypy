@@ -8,7 +8,7 @@ import hydra
 
 
 # noinspection Assert
-assert sys.version_info[0] == 3 and sys.version_info[1] >= 8, "rpc_proxy requires Python 3.8 or newer"
+assert sys.version_info[0] == 3 and sys.version_info[1] >= 8, "This library requires Python 3.8 or newer (3.9 recommended)"
 
 setup(
     name="halo-hypy",
@@ -26,12 +26,14 @@ setup(
         ],
     },
     install_requires=[
-        "pytest>=6.2.5",
-        "argcomplete>=1.12.3",
-        "requests>=2.26.0",
+        "pytest",
+        "argcomplete",
+        "requests",
         "attrdict",
         "pytz",
         "pycryptodome",
+        "currencies",
+        "python-kucoin",
     ],
     entry_points={
         "console_scripts": [
