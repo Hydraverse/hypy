@@ -43,6 +43,8 @@ class PriceClient:
 
             self._avail = tuple(_avail)
 
+        self._syms = {}
+
         for curr in self._avail:
             self._syms[curr] = Currency(curr).get_money_format(0).split("0", 1)[0]
 
