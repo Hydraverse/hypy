@@ -14,7 +14,6 @@ class PriceClient:
     coin: str
     kuku: Client
 
-    _incln: bool
     _currc: Currency
     _cache: TimedLRU[str, Optional[str]]
 
@@ -23,9 +22,8 @@ class PriceClient:
 
     _syms: Dict[str, str]
 
-    def __init__(self, api_key: str, api_secret: str, passphrase: str, *, coin: str = "HYDRA", include_names: bool = False, sandbox: bool = False, request_params=None):
+    def __init__(self, api_key: str, api_secret: str, passphrase: str, *, coin: str = "HYDRA", sandbox: bool = False, request_params=None):
         self.coin = coin
-        self._incln = include_names
         self.kuku = Client(api_key, api_secret, passphrase, sandbox=sandbox, requests_params=request_params)
 
         self._currc = Currency("USD")
@@ -46,7 +44,7 @@ class PriceClient:
         self._syms = {}
 
         for curr in self._avail:
-            self._syms[curr] = Currency(curr).get_money_format(0).split("0", 1)[0]
+            self._syms[curr] = Currency(curr).get_money_format("0").replace("0", "").strip()
 
     @property
     def currencies(self) -> tuple:
@@ -55,22 +53,25 @@ class PriceClient:
     def symbol(self, currency: str) -> str:
         return self._syms[currency]
 
-    def price(self, currency: str) -> Optional[str]:
-        return self._cache[currency]
+    def price(self, currency: str, *, raw=False, with_name=False) -> Optional[str]:
+        if currency not in self.currencies:
+            raise ValueError("Invalid currency.")
+
+        value = self._cache[currency]
+
+        return (
+            value if raw else
+            self.format(currency, value, with_name=with_name)
+        )
+
+    def format(self, currency: str, value, *, with_name=False):
+        self._currc.set_money_currency(currency)
+
+        return (
+            self._currc.get_money_format(value) if not with_name else
+            self._currc.get_money_with_currency_format(value)
+        )
 
     def __price(self, currc: str) -> Optional[str]:
         rslt = self.kuku.get_fiat_prices(currc, self.coin)
-        value = rslt.get(self.coin, None)
-
-        if value is not None:
-            self._currc.set_money_currency(currc)
-            return (
-                self._currc.get_money_format(value)
-                if not self._incln else
-                self._currc.get_money_with_currency_format(value)
-            )
-
-
-
-
-
+        return rslt.get(self.coin, None)
