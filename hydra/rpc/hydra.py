@@ -266,6 +266,8 @@ class HydraRPC(BaseRPC):
 
     def getstakinginfo(self): return self.call("getstakinginfo")
 
+    def getsubsidy(self): return self.call("getsubsidy")
+
     def submitblock(self, hexdata: str, dummy: str = ...): return self.call("submitblock", hexdata, dummy)
 
     def submitheader(self, hexdata: str): return self.call("submitheader", hexdata)
