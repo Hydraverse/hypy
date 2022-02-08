@@ -155,7 +155,7 @@ class HydraApp:
         else:
             for key, value in result.items():
                 yield from HydraApp.flatten(
-                    (f"{name}." if full else "") + f"{key}:", value, level=level + 1, full=full
+                    (name if full else "") + f".{key}", value, level=level + 1, full=full
                 )
 
     def setup(self):
