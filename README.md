@@ -1,3 +1,7 @@
+[- !! NOTE: This is the last version with this name, and the
+PyPI package will move to https://pypi.org/project/hydra-chain/,
+and this package won't be updated any longer. -]
+
 # Hydra Chain Integration & Tools Library
 
 This is a Python support library for the Hydra Chain project (https://hydrachain.org) aimed at simplifying the process of using and developing apps for the blockchain.
@@ -11,9 +15,6 @@ Primarily, `hypy` (pronounced "hippie") currently provides:
 # Quick Start
 
 If you know what this is and just want to get going, install:
-
-[- !! NOTE: This is the last version with this name, and the
-PyPI package will then be called `hydra-chain`. -] 
 
 `$ pip install halo-hypy`
 
