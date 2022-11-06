@@ -12,6 +12,9 @@ Primarily, `hypy` (pronounced "hippie") currently provides:
 
 If you know what this is and just want to get going, install:
 
+[- !! NOTE: This is the last version with this name, and the
+PyPI package will then be called `hydra-chain`. -] 
+
 `$ pip install halo-hypy`
 
 And then run!

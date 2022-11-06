@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "halo-hypy"
+version = "2.7.0"
+description = "Hydra Chain Tools & Application Library."
+authors = [
+    "Phillip Sitbon <phillip.sitbon@gmail.com>",
+    "Halospace Foundation <contact@halospace.org>",
+]
+readme = "README.md"
+license = "AGPLv3"
+repository = "https://github.com/hydraverse/hypy"
+
+packages = [
+    { include = "hydra" },
+]
+
+include = [
+    "hydra/res/*"
+]
+
+[tool.poetry.scripts]
+hy = "hydra.hy:Hydra.main"
+hycli = "hydra.app.cli:HydraCLIApp.main"
+peerscan = "hydra.app.peerscan:PeerScan.main"
+hytop = "hydra.app.top:TopApp.main"
+hytest = "hydra.test:Test.main"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+argcomplete = "^2.0.0"
+requests = "^2.28.1"
+pytz = "^2022.6"
+attrdict3 = "^2.0.2"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -69,6 +69,7 @@ class TopApp(HydraApp):
         stakinginfo = self.rpc.getstakinginfo()
 
         stakinginfo["search-interval"] = timedelta(seconds=stakinginfo["search-interval"])
+        # noinspection PyTypeChecker
         stakinginfo.expectedtime = timedelta(seconds=stakinginfo.expectedtime)
         stakinginfo.weight /= 10**8
         stakinginfo.netstakeweight /= 10**8

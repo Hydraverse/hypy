@@ -14,8 +14,10 @@
       <excludeFolder url="file://$MODULE_DIR$/dist" />
       <excludeFolder url="file://$MODULE_DIR$/halo_hypy.egg-info" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.9 (hypy)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Poetry (hypy)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="bot" />
+    <orderEntry type="module" module-name="hydb" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="versionSpecifier" value="Greater or equal (&gt;=x.y.z)" />
