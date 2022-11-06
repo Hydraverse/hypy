@@ -1,6 +1,6 @@
-[- !! NOTE: This is the last version with this name, and the
-PyPI package will move to https://pypi.org/project/hydra-chain/,
-and this package won't be updated any longer. -]
+!! NOTE: This is the last version with this name, and the
+PyPI package will move to [hydra-chain](https://pypi.org/project/hydra-chain/),
+and this one won't be updated any longer.
 
 # Hydra Chain Integration & Tools Library
 
