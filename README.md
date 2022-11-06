@@ -1,8 +1,4 @@
-!! NOTE: This is the last version with this name, and the
-PyPI package will move to [hydra-chain](https://pypi.org/project/hydra-chain/),
-and this one won't be updated any longer.
-
-# Hydra Chain Integration & Tools Library
+# [Hydra Chain Integration & Tools Library](https://pypi.org/project/hydra-chain-py/)
 
 This is a Python support library for the Hydra Chain project (https://hydrachain.org) aimed at simplifying the process of using and developing apps for the blockchain.
 
@@ -16,11 +12,23 @@ Primarily, `hypy` (pronounced "hippie") currently provides:
 
 If you know what this is and just want to get going, install:
 
-`$ pip install halo-hypy`
+```commandline
+pip install hydra-chain-py
+```
 
-And then run!
+Or with poetry:
 
-`$ hy --help`
+```commandline
+poetry add hydra-chain-py
+```
+
+This adds the `hydra` package to your Python installation. 
+
+Then, to get started, run:
+
+```commandline
+hy --help
+```
 
 Full download/install and usage instructions follow.
 
@@ -31,8 +39,10 @@ This library connects to a Hydra node on a local system or over a network.
 The primary tool to interface with the node is called `hycli`, and for the most part behaves exactly the same as `hydra-cli`,
 with some nicer output options:
 
+```commandline
+hycli getinfo
+```
 ```shell
-halo@blade:~ ֍ hycli getinfo
 getinfo                
   .version             180506
   .protocolversion     70017
@@ -66,8 +76,9 @@ getinfo
 There's also `hytop`, which periodically displays useful node status info in a human-readable format:
 
 ```commandline
-halo@blade:~ ֍ hytop -C
-
+hytop -C
+```
+```shell
 now                           2022-01-05 16:21:36.930567-08:00
 utcnow                        2022-01-06 00:21:36.930584
 connectioncount               8
@@ -93,8 +104,9 @@ walletinfo
 And `peerscan`, which attempts to connect to new nodes:
 
 ```commandline
-halo@blade:~ ֍ peerscan -vv
-
+peerscan -vv
+```
+```shell
 INFO:hypy:server reports 327 connections
 INFO:hypy:loaded 327 peers
 INFO:hypy:loaded 1201 nodes
@@ -113,8 +125,9 @@ To install the latest from git without cloning the repository,  jump down to the
 ### Clone/Download Sources:
 
 ```commandline
-֍ git clone https://github.com/hydraverse/hypy
-
+git clone https://github.com/hydraverse/hypy
+```
+```shell
 Cloning into 'hypy'...
 ...
 ```
@@ -126,47 +139,14 @@ version needs and dependencies.
 
 If installing at the system level, jump down to the [Installation](#Installing) section.
 
-Otherwise, you can choose between `venv`, `Anaconda`, `pipenv` and many others;
-however, `venv` is considered to be the supported environment for this library.
+#### Poetry
 
-#### Virtualenv
+This is now the only recommended/supported way to install or develop with this package.
 
-In case you'd like to use/install `hypy` within a virtual environment, run
-the following within the library's top folder:
+Create a new poetry project:
 
 ```commandline
-֍ mkdir .env
-֍ python3 -m venv .env/hypy
-...
-֍ source .env/hypy/bin/activate
-(hypy) ֍ which python
-/home/halo/.env/hypy/bin/python
-(hypy) ֍ pip install --upgrade pip  # Ensure that pip is the newest version.
-...
-```
-
-Requires the Debian/Ubuntu package `python3-venv`.
-
-#### Anaconda
-
-[Installing Conda on Linux](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html#install-linux-silent)
-summary:
-
-```commandline
-
-֍ wget https://repo.anaconda.com/archive/Anaconda3-2021.05-Linux-x86_64.sh
-
-֍ chmod +x Anaconda*.sh
-
-֍ ./Anaconda*.sh
-```
-
-##### Create & Activate Anaconda Environment:
-
-```commandline
-֍ conda create -n hypy python=3.8.10
-
-֍ conda activate hypy
+poetry new myproject && cd myproject && poetry add hydra-chain-py
 ```
 
 # Installing
@@ -175,31 +155,42 @@ summary:
 
 Installing from the cloned `hypy` library folder:
 
-`֍ pip install .`
+```commandline
+poetry install .
+```
 
 ### Remote Installation <a name="Remote-Installation"></a>
 
 Installing directly from GitHub:
 
-`֍ pip install git+https://github.com/hydraverse/hypy`
+```commandline
+poetry add git+https://github.com/hydraverse/hypy
+```
 
 Or to get a specific branch, tag, or revision:
 
-`֍ pip install git+https://github.com/hydraverse/hypy@v2.3.1`
+```commandline
+poetry add git+https://github.com/hydraverse/hypy@v2.7.2
+```
 
-This example installs the `v2.3.1` tagged version.
+This example installs the `v2.7.2` tagged version.
 
 ### Uninstall
 
-`֍ pip uninstall hypy`
+```commandline
+pip uninstall hypy
+```
+Or
+```commandline
+poetry remove hydra-chain-py
+```
 
 ### Packaging
 
 You can create a redistributable wheel package for later installation with the following command:
 
 ```commandline
-(hypy) ֍ pip install build
-(hypy) ֍ python -m build
+poetry build
 ```
 
 # Use: `hy`
@@ -212,7 +203,7 @@ integrate your own apps and run them as if they were part of the tool. More on t
 Running an app on the command line looks something like this **(note: '֍' is the command shell prompt)**:
 
 ```commandline
-֍ hy [-h] <some-app> [-h] [options] [app params]
+hy [-h] <some-app> [-h] [options] [app params]
 ```
 
 Use the `-h` option *before* the app name to see a list of apps, and after to get usage for a particular app.
@@ -234,7 +225,9 @@ You can also specify different parameters for the tests with environment variabl
 These variables also work with `hy`.
 
 ```commandline
-(hypy) halo@blade:hypy ֍ HY_RPC_WALLET=watch HY_LOG=ERROR hy test -
+HY_RPC_WALLET=watch HY_LOG=ERROR hy test -
+```
+```shell
 =========================== test session starts ============================
 platform linux -- Python 3.8.10, pytest-6.2.5, py-1.11.0, pluggy-1.0.0
 rootdir: /home/halo/pr/hy/hypy
@@ -261,21 +254,21 @@ hydra/app/top.py::TopAppTest::test_0_top_runnable PASSED             [100%]
 
 When developing ouside the library, tests can be run for standalone Application implementations.
 
-`hy-test examples/my_hydra_app.py`
-
+```commandline
+hy-test examples/my_hydra_app.py
+```
 
 # Full Usage: `hy`
 
-**NOTE:** Tab-completion is available with `argcomplete` but per-app parameters
+**NOTE:** Tab-completion is available via `argcomplete` but per-app parameters
 won't be shown, only the primary `hy` parameters.
-
-*(Instructions for tab completion coming soon)*
 
 ### `hy`
 
 ```commandline
-֍ hy -h
-
+hy -h
+```
+```shell
 usage: hy [-h] [-v] [-l LOG] [--rpc RPC] [--rpc-wallet RPC_WALLET]
           [--rpc-testnet] [-J] [-j] [-f]
           {cli,test,ascan,atrace,lstx,txvio,peerscan,top} ...
@@ -304,8 +297,9 @@ optional arguments:
 ### `cli`
 
 ```commandline
-֍ hycli -h
-
+hycli -h
+```
+```shell
 usage: hy cli ... [-f] ...
 
 optional arguments:
