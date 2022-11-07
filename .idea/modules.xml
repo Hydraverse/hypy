@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/../bot/.idea/bot.iml" filepath="$PROJECT_DIR$/../bot/.idea/bot.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../db/.idea/hydb.iml" filepath="$PROJECT_DIR$/../db/.idea/hydb.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/hypy.iml" filepath="$PROJECT_DIR$/.idea/hypy.iml" />
     </modules>
   </component>

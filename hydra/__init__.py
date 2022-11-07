@@ -6,4 +6,4 @@ __all__ = (
     "app", "hy", "log", "rpc", "test", "util"
 )
 
-__version__ = importlib.metadata.version("halo-hypy")
+__version__ = importlib.metadata.version("hydra-chain-py")
