@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "hydra-chain-py"
-version = "2.7.5"
+version = "2.7.6"
 description = "Hydra Chain Tools & Application Library."
 authors = [
     "Phillip Sitbon <phillip.sitbon@gmail.com>",
@@ -34,9 +34,6 @@ attrdict3 = "^2.0.2"
 python-kucoin = "^2.1.3"
 pycryptodome = "^3.15.0"
 currencies = "^2020.12.12"
-
-
-[tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
 
 [build-system]
