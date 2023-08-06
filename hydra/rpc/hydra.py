@@ -35,6 +35,8 @@ class HydraRPC(BaseRPC):
 
     @staticmethod
     def __parse_url__(url: str, testnet=False):
+        # TODO: Also parse wallet from path.
+
         url_split = urlsplit(url)
 
         schemes_hydra = ("mainnet", "main", "testnet", "test")
